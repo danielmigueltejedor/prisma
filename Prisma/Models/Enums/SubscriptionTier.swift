@@ -27,4 +27,14 @@ enum PlusFeature: String, CaseIterable, Identifiable {
     case .smartNotifications: String(localized: "plus.feature.notifications")
     }
   }
+
+  /// Funciones que Apple Intelligence on-device puede cubrir gratis.
+  var isAvailableWithAppleIntelligence: Bool {
+    switch self {
+    case .aiSummary, .compareSources, .clustering, .dailyBriefing:
+      true
+    case .smartFeed, .translation, .smartNotifications:
+      false
+    }
+  }
 }

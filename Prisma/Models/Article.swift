@@ -18,6 +18,8 @@ final class Article {
   var isRead: Bool
   var isSaved: Bool
   var isFavorite: Bool
+  var viewCount: Int
+  var likeCount: Int
   var readingTimeEstimate: Int
   var originalFeedUrl: String
   var contentAvailabilityRaw: String
@@ -55,6 +57,8 @@ final class Article {
     isRead: Bool = false,
     isSaved: Bool = false,
     isFavorite: Bool = false,
+    viewCount: Int = 0,
+    likeCount: Int = 0,
     readingTimeEstimate: Int = 1,
     originalFeedUrl: String,
     contentAvailability: ContentAvailability = .unknown,
@@ -76,6 +80,8 @@ final class Article {
     self.isRead = isRead
     self.isSaved = isSaved
     self.isFavorite = isFavorite
+    self.viewCount = viewCount
+    self.likeCount = likeCount
     self.readingTimeEstimate = readingTimeEstimate
     self.originalFeedUrl = originalFeedUrl
     self.contentAvailabilityRaw = contentAvailability.rawValue

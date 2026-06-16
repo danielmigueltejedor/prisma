@@ -5,6 +5,7 @@ import Foundation
 final class TodayViewModel {
   var articles: [Article] = []
   var favoriteSourceArticles: [Article] = []
+  var trendingArticles: [Article] = []
   var recentlySaved: [Article] = []
   var searchResults: [Article] = []
   var searchText = ""
@@ -52,6 +53,14 @@ final class TodayViewModel {
 
       let favoriteIds = Set(try feedSourceRepository.fetchFavorites().map(\.id))
       favoriteSourceArticles = articles.filter { favoriteIds.contains($0.sourceId) }.prefix(10).map { $0 }
+      trendingArticles = articles
+        .filter { $0.viewCount > 0 || $0.likeCount > 0 }
+        .sorted {
+          if $0.viewCount == $1.viewCount { return $0.likeCount > $1.likeCount }
+          return $0.viewCount > $1.viewCount
+        }
+        .prefix(10)
+        .map { $0 }
       recentlySaved = try articleService.chronologicalFeed(
         blockedKeywords: prefs.blockedKeywords,
         blockedSourceIds: blockedSources

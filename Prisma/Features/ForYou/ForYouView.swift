@@ -19,15 +19,17 @@ struct ForYouView: View {
         } else {
           ScrollView {
             LazyVStack(alignment: .leading, spacing: PrismaSpacing.lg) {
-              if !viewModel.isPlusActive {
+              if !viewModel.hasSmartFeed {
                 plusPromoCard
+              } else if AIServiceFactory.hasFreeOnDeviceAI && !viewModel.isPlusActive {
+                onDeviceAIBadge
               }
 
-              if viewModel.isPlusActive, let briefing = viewModel.briefing {
+              if viewModel.hasSmartFeed, let briefing = viewModel.briefing {
                 briefingCard(briefing)
               }
 
-              if viewModel.isPlusActive, !viewModel.clusters.isEmpty {
+              if viewModel.hasSmartFeed, !viewModel.clusters.isEmpty {
                 sectionHeader(String(localized: "foryou.clusters"))
                 ForEach(viewModel.clusters, id: \.id) { cluster in
                   Button { selectedCluster = cluster } label: {
@@ -38,7 +40,7 @@ struct ForYouView: View {
               }
 
               sectionHeader(
-                viewModel.isPlusActive
+                viewModel.hasSmartFeed
                   ? String(localized: "foryou.smartFeed")
                   : String(localized: "foryou.localFeed")
               )
@@ -54,6 +56,8 @@ struct ForYouView: View {
                     isRead: article.isRead,
                     isSaved: article.isSaved,
                     readingTimeMinutes: article.readingTimeEstimate,
+                    likeCount: article.likeCount,
+                    viewCount: article.viewCount,
                     sourceSiteURL: article.feedSource?.siteURL,
                     sourceFeedURL: article.originalFeedUrl
                   )
@@ -87,6 +91,19 @@ struct ForYouView: View {
         )
       }
     }
+  }
+
+  private var onDeviceAIBadge: some View {
+    HStack(spacing: PrismaSpacing.xs) {
+      Image(systemName: "apple.intelligence")
+        .foregroundStyle(PrismaColors.accentFallback)
+      Text(String(localized: "ai.onDeviceFree"))
+        .font(PrismaTypography.caption(.semibold))
+        .foregroundStyle(PrismaColors.textSecondary)
+    }
+    .padding(PrismaSpacing.md)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .prismaGlass()
   }
 
   private var plusPromoCard: some View {

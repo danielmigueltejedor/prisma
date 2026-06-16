@@ -1,6 +1,6 @@
 name: Prisma
 options:
-  bundleIdPrefix: com.prisma
+  bundleIdPrefix: com.danielmigueltejedor
   deploymentTarget:
     iOS: "17.0"
   developmentLanguage: es
@@ -42,7 +42,7 @@ targets:
       base:
         INFOPLIST_FILE: Prisma/Info.plist
         GENERATE_INFOPLIST_FILE: NO
-        PRODUCT_BUNDLE_IDENTIFIER: com.prisma.app
+        PRODUCT_BUNDLE_IDENTIFIER: com.danielmigueltejedor.prisma
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
@@ -64,7 +64,7 @@ targets:
       - target: Prisma
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.prisma.app.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.danielmigueltejedor.prisma.tests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Prisma.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prisma"
         BUNDLE_LOADER: "$(TEST_HOST)"

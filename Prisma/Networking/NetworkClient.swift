@@ -5,7 +5,11 @@ struct NetworkClient {
   var timeout: TimeInterval = 30
 
   func fetchData(from urlString: String) async throws -> Data {
-    guard let url = URL(string: urlString.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+    let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard let url = URL(string: trimmed),
+          let scheme = url.scheme?.lowercased(),
+          scheme == "https" || scheme == "http"
+    else {
       throw NetworkError.invalidURL
     }
     return try await fetchData(from: url)

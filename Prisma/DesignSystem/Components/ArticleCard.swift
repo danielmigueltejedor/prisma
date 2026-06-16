@@ -8,6 +8,8 @@ struct ArticleCard: View {
   let imageURL: URL?
   var isRead: Bool = false
   var isSaved: Bool = false
+  var likeCount: Int? = nil
+  var viewCount: Int? = nil
   var readingTimeMinutes: Int?
   var sourceSiteURL: String? = nil
   var sourceFeedURL: String? = nil
@@ -51,6 +53,19 @@ struct ArticleCard: View {
             .font(PrismaTypography.callout())
             .foregroundStyle(PrismaColors.textSecondary)
             .lineLimit(2)
+        }
+
+        HStack(spacing: PrismaSpacing.sm) {
+          if let viewCount, viewCount > 0 {
+            Label("\(viewCount)", systemImage: "eye")
+              .font(PrismaTypography.caption2())
+              .foregroundStyle(PrismaColors.textTertiary)
+          }
+          if let likeCount, likeCount > 0 {
+            Label("\(likeCount)", systemImage: "heart.fill")
+              .font(PrismaTypography.caption2())
+              .foregroundStyle(PrismaColors.textTertiary)
+          }
         }
       }
 

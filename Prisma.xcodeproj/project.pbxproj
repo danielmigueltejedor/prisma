@@ -14,6 +14,7 @@
 		12873E5582A988F9E7A19BAB /* PrismaGlassModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F6E9A21354D50ADABE641B /* PrismaGlassModifier.swift */; };
 		152ABC33EDCB2709BC443FBC /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A715831E7AD0565B5DECFF1 /* Collection.swift */; };
 		161572EFE58B64909495487A /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98066D28D28723FBF752DFE /* SettingsViewModel.swift */; };
+		161B6CE665A35579C20DEDEE /* FoundationModelsAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07440B8A2E8346A6ABDD6302 /* FoundationModelsAIService.swift */; };
 		186AE9ED8A7C7A621D58985A /* RecommendationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB837A1AF6955086C29A840 /* RecommendationEngineTests.swift */; };
 		1BF46206D0ECA331AF9C8B31 /* FeedSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12C216445BE1943C785BAAC2 /* FeedSource.swift */; };
 		1F91E2FF0C1A0E3D5CB92869 /* AIArticleSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D418B21AD0D154D3DAFDAF /* AIArticleSummary.swift */; };
@@ -27,6 +28,7 @@
 		3134A4A3010C62EA79C4EAF2 /* ArticleReaderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 036953CDE1679366159999BF /* ArticleReaderViewModel.swift */; };
 		36840B58EABBC80E50031382 /* RecommendedFeeds.json in Resources */ = {isa = PBXBuildFile; fileRef = 6D525026FA15CF659DDB7999 /* RecommendedFeeds.json */; };
 		3861373E9A875FB56A7491B3 /* FeedParserProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800E90006E14B067B4D2DBB6 /* FeedParserProtocol.swift */; };
+		3968D0F79964DC84BDE6B384 /* LocalFirstAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0A02710145DF89483759F91 /* LocalFirstAIService.swift */; };
 		3B5E88330DFB56C8FC62984F /* Article.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2172CB7B7F1F75966FB6CE /* Article.swift */; };
 		3BEFACE9CCBAB62693B91CB6 /* AddSourceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4B05B40614B7C23C5705C5 /* AddSourceView.swift */; };
 		3F2D7C30B9B3E94CA718CD67 /* ReadingTimeEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33673EBDC28D97D13112498 /* ReadingTimeEstimator.swift */; };
@@ -53,6 +55,7 @@
 		7C7CFEA7D868E0EE9BEA0E94 /* Author.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12BAF0ECD2FFFCC4BA600A3A /* Author.swift */; };
 		8103B129521951A9F67BDA2D /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E78872D21871A863AFC691 /* TodayViewModel.swift */; };
 		81A39BD089163EA1EBE13CA6 /* SourceIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7E63532E438E5D011392FB /* SourceIconView.swift */; };
+		81AC578A585FBEC631D65160 /* AIServiceFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91BA9BDF6E299C15ACEF0B40 /* AIServiceFactory.swift */; };
 		88D45C1CB7F099CBB0E38419 /* FeedSourceRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC5B9FB38BEE41D81E428C7 /* FeedSourceRepository.swift */; };
 		89AE96F6025CF814410C411B /* ParsedFeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE0866FC757879D4B9FF35C9 /* ParsedFeed.swift */; };
 		8FFA97E3B0761D630FC19D9F /* SubscriptionTier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7A13197F216CE98A07661B /* SubscriptionTier.swift */; };
@@ -83,6 +86,7 @@
 		D9C7330347DCCC7248591977 /* ArticleCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD4A1B9125071E6B7B99109C /* ArticleCard.swift */; };
 		DAAEE9A9A3F323CD4DAF1C7C /* ArticleRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3457D5238AB6632A5CE3159D /* ArticleRepository.swift */; };
 		DAE46AE0B090CF7D7CE4FA42 /* CollectionRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF14A07747DD62D8AC9256E /* CollectionRepository.swift */; };
+		DD85521F9BF9DE577BB3711E /* AppleIntelligenceAvailability.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4465CFB3CBC9C3999DABD10A /* AppleIntelligenceAvailability.swift */; };
 		DFF1AFC37407F27B0A0CAE6B /* NewsCountry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42CA8A8A95DDB051DCF8A34 /* NewsCountry.swift */; };
 		E4B7379C3AD2FE3E2DE490F7 /* SavedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD8B138CB16139AC5197806 /* SavedViewModel.swift */; };
 		E79CAE8B7E75A607DA399C5E /* RSSAtomParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FF372C63178FBD0CE78A0F /* RSSAtomParserTests.swift */; };
@@ -119,6 +123,7 @@
 
 /* Begin PBXFileReference section */
 		036953CDE1679366159999BF /* ArticleReaderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleReaderViewModel.swift; sourceTree = "<group>"; };
+		07440B8A2E8346A6ABDD6302 /* FoundationModelsAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsAIService.swift; sourceTree = "<group>"; };
 		085B57FF3D8E56B57857074B /* PrismaRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaRadius.swift; sourceTree = "<group>"; };
 		0D7E03F9C1CE868C3EC9158D /* SavedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedView.swift; sourceTree = "<group>"; };
 		0E5934482E54044A6241CAE3 /* PrismaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaApp.swift; sourceTree = "<group>"; };
@@ -143,6 +148,7 @@
 		3A1B73FDCDE910B270FCE097 /* SimilarArticlesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarArticlesSection.swift; sourceTree = "<group>"; };
 		3CF50DF6E67E615590F1397E /* SubscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionService.swift; sourceTree = "<group>"; };
 		3EA14439A7FCE6CF77958BA0 /* SimilarArticlesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimilarArticlesService.swift; sourceTree = "<group>"; };
+		4465CFB3CBC9C3999DABD10A /* AppleIntelligenceAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligenceAvailability.swift; sourceTree = "<group>"; };
 		464AAA711A0FD7CCCAEE5088 /* PrismaCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaCard.swift; sourceTree = "<group>"; };
 		46D418B21AD0D154D3DAFDAF /* AIArticleSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIArticleSummary.swift; sourceTree = "<group>"; };
 		47E78872D21871A863AFC691 /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
@@ -155,7 +161,7 @@
 		546FED0244A3C918B106D587 /* ArticleTopicMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleTopicMatcher.swift; sourceTree = "<group>"; };
 		55A8F0EA55B35B449F259622 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayView.swift; sourceTree = "<group>"; };
 		5C7A13197F216CE98A07661B /* SubscriptionTier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionTier.swift; sourceTree = "<group>"; };
-		5DAD53F76A66475B6F9062C1 /* Prisma.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Prisma.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5DAD53F76A66475B6F9062C1 /* Prisma.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Prisma.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6256DABC65F22383457CD8B0 /* PrismaButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaButton.swift; sourceTree = "<group>"; };
 		63A60DC5E46682C8F1AC9371 /* ForYouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForYouView.swift; sourceTree = "<group>"; };
 		63B8C2CEC67D996EE5DC9AAE /* RecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngine.swift; sourceTree = "<group>"; };
@@ -164,7 +170,7 @@
 		6D525026FA15CF659DDB7999 /* RecommendedFeeds.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RecommendedFeeds.json; sourceTree = "<group>"; };
 		723396E3BB432714D1D6B74B /* PrismaScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaScreen.swift; sourceTree = "<group>"; };
 		7233D800B014F162F679E2BB /* AIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIService.swift; sourceTree = "<group>"; };
-		75424F51AD2021E8570B653D /* StoreKitConfiguration.storekit */ = {isa = PBXFileReference; path = StoreKitConfiguration.storekit; sourceTree = "<group>"; };
+		75424F51AD2021E8570B653D /* StoreKitConfiguration.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = StoreKitConfiguration.storekit; sourceTree = "<group>"; };
 		77FEACF3F8CB249CFA5C84F9 /* RSSAtomParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSSAtomParser.swift; sourceTree = "<group>"; };
 		7A4B05B40614B7C23C5705C5 /* AddSourceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSourceView.swift; sourceTree = "<group>"; };
 		7B47A8ADB0D68F20BA01752C /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
@@ -177,6 +183,7 @@
 		89762E5AC851DA6825E0E341 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		89FF372C63178FBD0CE78A0F /* RSSAtomParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RSSAtomParserTests.swift; sourceTree = "<group>"; };
 		8E459CD1B30801F3BFAD0251 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		91BA9BDF6E299C15ACEF0B40 /* AIServiceFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIServiceFactory.swift; sourceTree = "<group>"; };
 		9321C2E99C9C6E7574093E11 /* PrismaPlusGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaPlusGate.swift; sourceTree = "<group>"; };
 		95F6E9A21354D50ADABE641B /* PrismaGlassModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaGlassModifier.swift; sourceTree = "<group>"; };
 		98599C42024A965AA3758629 /* AppearanceMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceMode.swift; sourceTree = "<group>"; };
@@ -184,6 +191,7 @@
 		9AB837A1AF6955086C29A840 /* RecommendationEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngineTests.swift; sourceTree = "<group>"; };
 		9E7E63532E438E5D011392FB /* SourceIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SourceIconView.swift; sourceTree = "<group>"; };
 		9F6375536EE22441158AF073 /* FeedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedService.swift; sourceTree = "<group>"; };
+		A0A02710145DF89483759F91 /* LocalFirstAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalFirstAIService.swift; sourceTree = "<group>"; };
 		A1A4284E87DDAAF40E1F1842 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
 		A359708EB3D7D87B9CCD85C4 /* BlocklistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlocklistService.swift; sourceTree = "<group>"; };
 		AB6D8E171CFF058DF2F8DB1A /* ContentAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentAvailability.swift; sourceTree = "<group>"; };
@@ -330,6 +338,10 @@
 			children = (
 				4674C1ED8ABD470E5C432AE1 /* DTOs */,
 				7233D800B014F162F679E2BB /* AIService.swift */,
+				91BA9BDF6E299C15ACEF0B40 /* AIServiceFactory.swift */,
+				4465CFB3CBC9C3999DABD10A /* AppleIntelligenceAvailability.swift */,
+				07440B8A2E8346A6ABDD6302 /* FoundationModelsAIService.swift */,
+				A0A02710145DF89483759F91 /* LocalFirstAIService.swift */,
 				5123D9EA7E577DFC0594C154 /* MockAIService.swift */,
 				64C7086E1DE846E4674BA81A /* RemoteAIService.swift */,
 			);
@@ -640,7 +652,6 @@
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
 					6AD5E1769767A666857B804A = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 					F9C6A19C90A94E4138FF9FFF = {
@@ -690,11 +701,13 @@
 			files = (
 				1F91E2FF0C1A0E3D5CB92869 /* AIArticleSummary.swift in Sources */,
 				AAA176008FEE51C72CC21EEC /* AIService.swift in Sources */,
+				81AC578A585FBEC631D65160 /* AIServiceFactory.swift in Sources */,
 				3BEFACE9CCBAB62693B91CB6 /* AddSourceView.swift in Sources */,
 				6EBABFDF17D4B95A2D7016B1 /* AppConfiguration.swift in Sources */,
 				263F9ACA8DDB043E56C41D76 /* AppDependencies.swift in Sources */,
 				6D4962BB61C5167EAEF65EC7 /* AppearanceMode.swift in Sources */,
 				F5A5E7AE15E8B8603B74F8CA /* AppearanceSettingsView.swift in Sources */,
+				DD85521F9BF9DE577BB3711E /* AppleIntelligenceAvailability.swift in Sources */,
 				3B5E88330DFB56C8FC62984F /* Article.swift in Sources */,
 				D9C7330347DCCC7248591977 /* ArticleCard.swift in Sources */,
 				265809623E94C19CEED6C9D5 /* ArticleHTMLView.swift in Sources */,
@@ -723,9 +736,11 @@
 				88D45C1CB7F099CBB0E38419 /* FeedSourceRepository.swift in Sources */,
 				C136B3854AAEEB5DD5D6B0C5 /* ForYouView.swift in Sources */,
 				6F29D929C4D44C83EDC56100 /* ForYouViewModel.swift in Sources */,
+				161B6CE665A35579C20DEDEE /* FoundationModelsAIService.swift in Sources */,
 				FB70EADFF67D7C1E1690B240 /* GlassBackground.swift in Sources */,
 				3008C3C11F441ED5CDD2E61D /* HTMLSanitizer.swift in Sources */,
 				51EFFE355004C9327D618F60 /* LoadingView.swift in Sources */,
+				3968D0F79964DC84BDE6B384 /* LocalFirstAIService.swift in Sources */,
 				299CD2335F5A5974E1F3868F /* MainTabView.swift in Sources */,
 				6EAEEB1720493C877D9953F2 /* MockAIService.swift in Sources */,
 				51064FFA7EAAEB083570C94F /* ModelContainer+Prisma.swift in Sources */,
@@ -813,7 +828,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prisma.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.danielmigueltejedor.prisma.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Prisma.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prisma";
@@ -827,6 +842,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7B3P8F4833;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Prisma/Info.plist;
@@ -834,7 +850,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prisma.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.danielmigueltejedor.prisma;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -849,6 +865,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7B3P8F4833;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Prisma/Info.plist;
@@ -856,7 +873,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prisma.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.danielmigueltejedor.prisma;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -874,7 +891,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.prisma.app.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.danielmigueltejedor.prisma.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Prisma.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prisma";

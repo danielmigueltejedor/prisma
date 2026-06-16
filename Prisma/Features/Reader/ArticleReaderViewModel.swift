@@ -40,6 +40,8 @@ final class ArticleReaderViewModel {
   }
 
   var isPlusActive: Bool { plusGate.isPlusActive }
+  var hasFreeOnDeviceAI: Bool { AIServiceFactory.hasFreeOnDeviceAI }
+  var canUseAI: Bool { plusGate.requirePlus(for: .aiSummary) }
 
   var canCompareSources: Bool {
     (try? feedSourceRepository.fetchEnabled().count) ?? 0 > 1
@@ -104,7 +106,7 @@ final class ArticleReaderViewModel {
   }
 
   func performPlusAction(_ action: PlusAction) async -> Bool {
-    guard plusGate.requirePlus(for: .aiSummary) else { return false }
+    guard canUseAI else { return false }
 
     isLoadingAI = true
     errorMessage = nil

@@ -66,11 +66,25 @@ struct AddSourceView: View {
   private func recommendedSection(_ title: String, feeds: [RecommendedFeed]) -> some View {
     if !feeds.isEmpty {
       Section(title) {
-        ForEach(feeds) { feed in
-          recommendedRow(feed)
+        ForEach(groupedByCategory(feeds), id: \.key) { group in
+          VStack(alignment: .leading, spacing: PrismaSpacing.xs) {
+            Text(group.key)
+              .font(PrismaTypography.caption(.semibold))
+              .foregroundStyle(PrismaColors.textTertiary)
+            ForEach(group.value) { feed in
+              recommendedRow(feed)
+            }
+          }
+          .padding(.vertical, PrismaSpacing.xxs)
         }
       }
     }
+  }
+
+  private func groupedByCategory(_ feeds: [RecommendedFeed]) -> [(key: String, value: [RecommendedFeed])] {
+    Dictionary(grouping: feeds, by: \.category)
+      .map { ($0.key, $0.value.sorted { $0.name < $1.name }) }
+      .sorted { $0.key < $1.key }
   }
 
   private func recommendedRow(_ feed: RecommendedFeed) -> some View {

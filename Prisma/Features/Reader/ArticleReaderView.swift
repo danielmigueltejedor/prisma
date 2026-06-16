@@ -108,15 +108,11 @@ struct ArticleReaderView: View {
                 : String(localized: "reader.readingModeOff")
             )
           }
-          Button { openInBrowser() } label: {
-            Label(String(localized: "reader.openInBrowser"), systemImage: "safari")
-              .labelStyle(.iconOnly)
-          }
           Button { viewModel.toggleSaved() } label: {
             Image(systemName: viewModel.article.isSaved ? "bookmark.fill" : "bookmark")
           }
           Button { viewModel.toggleFavorite() } label: {
-            Image(systemName: viewModel.article.isFavorite ? "star.fill" : "star")
+            Image(systemName: viewModel.article.isFavorite ? "heart.fill" : "heart")
           }
         }
       }
@@ -203,9 +199,6 @@ struct ArticleReaderView: View {
       Text(String(localized: "reader.partialNotice"))
         .font(PrismaTypography.callout())
         .foregroundStyle(PrismaColors.textSecondary)
-      PrismaButton(title: String(localized: "reader.openInBrowser"), style: .secondary) {
-        openInBrowser()
-      }
     }
     .padding(PrismaSpacing.md)
     .prismaGlass()
@@ -215,8 +208,7 @@ struct ArticleReaderView: View {
     VStack(spacing: PrismaSpacing.sm) {
       plusButton(
         title: String(localized: "reader.aiSummary"),
-        icon: "sparkles",
-        feature: .aiSummary
+        icon: "sparkles"
       ) {
         await handlePlus { await viewModel.performPlusAction(.summary) }
       }
@@ -224,8 +216,7 @@ struct ArticleReaderView: View {
       if viewModel.canCompareSources {
         plusButton(
           title: String(localized: "reader.compare"),
-          icon: "arrow.left.arrow.right",
-          feature: .compareSources
+          icon: "arrow.left.arrow.right"
         ) {
           await handlePlus { await viewModel.performPlusAction(.compare) }
         }
@@ -233,8 +224,7 @@ struct ArticleReaderView: View {
 
       plusButton(
         title: String(localized: "reader.context"),
-        icon: "info.circle",
-        feature: .aiSummary
+        icon: "info.circle"
       ) {
         await handlePlus { await viewModel.performPlusAction(.context) }
       }
@@ -244,7 +234,6 @@ struct ArticleReaderView: View {
   private func plusButton(
     title: String,
     icon: String,
-    feature: PlusFeature,
     action: @escaping () async -> Void
   ) -> some View {
     Button {
@@ -254,7 +243,7 @@ struct ArticleReaderView: View {
         Image(systemName: icon)
         Text(title)
         Spacer()
-        if !viewModel.isPlusActive {
+        if !viewModel.canUseAI {
           PrismaPlusBadge()
         }
       }
@@ -266,7 +255,7 @@ struct ArticleReaderView: View {
   }
 
   private func handlePlus(action: () async -> Bool) async {
-    if viewModel.isPlusActive {
+    if viewModel.canUseAI {
       _ = await action()
     } else {
       onShowPaywall()
@@ -276,7 +265,12 @@ struct ArticleReaderView: View {
   private func aiResultCard(title: String, text: String) -> some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
       HStack {
-        PrismaPlusBadge()
+        if viewModel.isPlusActive {
+          PrismaPlusBadge()
+        } else if viewModel.hasFreeOnDeviceAI {
+          Image(systemName: "apple.intelligence")
+            .foregroundStyle(PrismaColors.accentFallback)
+        }
         Text(title)
           .font(PrismaTypography.headline())
       }
@@ -294,16 +288,20 @@ struct ArticleReaderView: View {
       Text(String(localized: "reader.attribution"))
         .font(PrismaTypography.caption())
         .foregroundStyle(PrismaColors.textTertiary)
-      Button(String(localized: "reader.openInBrowser")) {
+      PrismaButton(title: String(localized: "reader.openInBrowser"), style: .secondary) {
         openInBrowser()
       }
-      .font(PrismaTypography.callout(.semibold))
     }
     .padding(.top, PrismaSpacing.md)
   }
 
   private func openInBrowser() {
-    guard let url = URL(string: viewModel.article.url) else { return }
+    let raw = viewModel.article.url.trimmingCharacters(in: .whitespacesAndNewlines)
+    let normalized = (raw.removingPercentEncoding ?? raw).replacingOccurrences(of: "&amp;", with: "&")
+    let candidate = normalized.contains("://") ? normalized : "https://\(normalized)"
+    let encoded = candidate.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? candidate
+    guard let url = URL(string: encoded)
+    else { return }
     safariURL = url
     showSafari = true
   }

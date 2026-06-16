@@ -34,6 +34,11 @@ final class ForYouViewModel {
 
   var isPlusActive: Bool { plusGate.isPlusActive }
 
+  /// Prisma+ o Apple Intelligence local gratuita.
+  var hasSmartFeed: Bool {
+    isPlusActive || AIServiceFactory.hasFreeOnDeviceAI
+  }
+
   func load() {
     do {
       let prefs = try preferenceRepository.getOrCreate()
@@ -53,7 +58,7 @@ final class ForYouViewModel {
         blockedSourceIds: blockedSources
       )
 
-      if isPlusActive {
+      if hasSmartFeed {
         Task { await loadPlusContent(preferences: prefs) }
       }
     } catch {

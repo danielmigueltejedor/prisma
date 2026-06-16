@@ -35,6 +35,11 @@ struct TodayView: View {
                   }
               }
 
+              if !viewModel.trendingArticles.isEmpty {
+                sectionHeader("Tendencias")
+                articleList(viewModel.trendingArticles)
+              }
+
               sectionHeader(String(localized: "today.section.latest"))
               articleList(viewModel.displayedArticles.prefix(20).map { $0 })
 
@@ -87,6 +92,8 @@ struct TodayView: View {
             isRead: article.isRead,
             isSaved: article.isSaved,
             readingTimeMinutes: article.readingTimeEstimate,
+            likeCount: article.likeCount,
+            viewCount: article.viewCount,
             sourceSiteURL: article.feedSource?.siteURL,
             sourceFeedURL: article.originalFeedUrl
           )

@@ -38,7 +38,8 @@ final class AppDependencies {
     articleService = ArticleService(articleRepository: articleRepository)
     searchService = SearchService(articleRepository: articleRepository)
     recommendationEngine = RecommendationEngine()
-    aiService = MockAIService()
+    let primaryAI = AIServiceFactory.makePrimary()
+    aiService = LocalFirstAIService(onDevice: primaryAI, fallback: MockAIService())
 
     if AppConfiguration.useMockSubscription {
       subscriptionService = MockSubscriptionService(preferenceRepository: preferenceRepository)

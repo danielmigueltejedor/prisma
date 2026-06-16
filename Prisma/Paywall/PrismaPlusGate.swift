@@ -19,6 +19,9 @@ final class PrismaPlusGatekeeper: PrismaPlusGate {
   }
 
   func requirePlus(for feature: PlusFeature) -> Bool {
-    subscriptionService.isPlusActive
+    if AIServiceFactory.hasFreeOnDeviceAI, feature.isAvailableWithAppleIntelligence {
+      return true
+    }
+    return subscriptionService.isPlusActive
   }
 }

@@ -116,6 +116,7 @@ final class ArticleRepository {
   }
 
   func markRead(_ article: Article) throws {
+    article.viewCount += 1
     article.isRead = true
     if article.readingHistory == nil {
       let history = ReadingHistory(article: article)
@@ -141,6 +142,11 @@ final class ArticleRepository {
 
   func toggleFavorite(_ article: Article) throws {
     article.isFavorite.toggle()
+    if article.isFavorite {
+      article.likeCount += 1
+    } else {
+      article.likeCount = max(0, article.likeCount - 1)
+    }
     try context.save()
   }
 }
