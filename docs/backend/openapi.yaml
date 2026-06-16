@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: Prisma+ API
+  version: 1.0.0
+  description: API para funciones inteligentes de Prisma+
+
+servers:
+  - url: https://api.prisma.app
+
+security:
+  - bearerAuth: []
+
+paths:
+  /v1/summarize:
+    post:
+      summary: Genera resumen de un artículo
+      operationId: summarizeArticle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticlePayload'
+      responses:
+        '200':
+          description: Resumen generado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SummaryResponse'
+
+  /v1/classify:
+    post:
+      summary: Clasifica un artículo
+      operationId: classifyArticle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticlePayload'
+      responses:
+        '200':
+          description: Categorías
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: string
+
+  /v1/cluster:
+    post:
+      summary: Agrupa artículos similares
+      operationId: clusterArticles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                articles:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ArticlePayload'
+      responses:
+        '200':
+          description: Clusters
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clusters:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Cluster'
+
+  /v1/compare:
+    post:
+      summary: Compara enfoques entre fuentes
+      operationId: compareSources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cluster:
+                  $ref: '#/components/schemas/Cluster'
+                articles:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ArticlePayload'
+      responses:
+        '200':
+          description: Comparación
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comparison:
+                    type: string
+
+  /v1/briefing:
+    post:
+      summary: Portada diaria personalizada
+      operationId: dailyBriefing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                articles:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ArticlePayload'
+                blockedKeywords:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Briefing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyBriefing'
+
+  /v1/context:
+    post:
+      summary: Explica contexto del artículo
+      operationId: explainContext
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticlePayload'
+      responses:
+        '200':
+          description: Contexto
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articleId:
+                    type: string
+                  explanation:
+                    type: string
+
+  /v1/quota:
+    get:
+      summary: Cuota restante
+      operationId: getQuota
+      responses:
+        '200':
+          description: Cuota
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  summariesRemaining:
+                    type: integer
+                  briefingsRemaining:
+                    type: integer
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    ArticlePayload:
+      type: object
+      required: [id, title, url, sourceName]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+        sourceName:
+          type: string
+        summary:
+          type: string
+        author:
+          type: string
+
+    SummaryResponse:
+      type: object
+      properties:
+        articleId:
+          type: string
+        summary:
+          type: string
+        provider:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    Cluster:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        articleIds:
+          type: array
+          items:
+            type: string
+        comparisonNote:
+          type: string
+
+    DailyBriefing:
+      type: object
+      properties:
+        title:
+          type: string
+        sections:
+          type: array
+          items:
+            type: object
+            properties:
+              headline:
+                type: string
+              summary:
+                type: string
+              articleIds:
+                type: array
+                items:
+                  type: string
+        generatedAt:
+          type: string
+          format: date-time

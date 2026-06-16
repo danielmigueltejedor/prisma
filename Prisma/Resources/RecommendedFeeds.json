@@ -1,0 +1,75 @@
+[
+  {"id":"el-pais","name":"El País","feedURL":"https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada","siteURL":"https://elpais.com","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"el-mundo","name":"El Mundo","feedURL":"https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml","siteURL":"https://www.elmundo.es","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"eldiario","name":"elDiario.es","feedURL":"https://www.eldiario.es/rss/","siteURL":"https://www.eldiario.es","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"lavanguardia","name":"La Vanguardia","feedURL":"https://www.lavanguardia.com/rss/home.xml","siteURL":"https://www.lavanguardia.com","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"abc-es","name":"ABC","feedURL":"https://www.abc.es/rss/feeds/abc_ultima.xml","siteURL":"https://www.abc.es","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"xataka","name":"Xataka","feedURL":"https://www.xataka.com/index.xml","siteURL":"https://www.xataka.com","category":"Tecnología","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"hipertextual","name":"Hipertextual","feedURL":"https://hipertextual.com/feed","siteURL":"https://hipertextual.com","category":"Tecnología","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"20minutos","name":"20 minutos","feedURL":"https://www.20minutos.es/rss/","siteURL":"https://www.20minutos.es","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"el-confidencial","name":"El Confidencial","feedURL":"https://rss.elconfidencial.com/espana/","siteURL":"https://www.elconfidencial.com","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"publico-es","name":"Público","feedURL":"https://www.publico.es/rss/","siteURL":"https://www.publico.es","category":"General","language":"es","countryCode":"ES","scope":"local"},
+  {"id":"catalunya-radio","name":"Catalunya Ràdio","feedURL":"https://www.catalunyaplural.cat/ca/rss.xml","siteURL":"https://www.catalunyaplural.cat","category":"General","language":"ca","countryCode":"ES","scope":"local"},
+
+  {"id":"el-universal-mx","name":"El Universal","feedURL":"https://www.eluniversal.com.mx/rss.xml","siteURL":"https://www.eluniversal.com.mx","category":"General","language":"es","countryCode":"MX","scope":"local"},
+  {"id":"reforma-mx","name":"Reforma","feedURL":"https://www.reforma.com/rss/portada.xml","siteURL":"https://www.reforma.com","category":"General","language":"es","countryCode":"MX","scope":"local"},
+  {"id":"animal-politico","name":"Animal Político","feedURL":"https://www.animalpolitico.com/feed/","siteURL":"https://www.animalpolitico.com","category":"General","language":"es","countryCode":"MX","scope":"local"},
+  {"id":"milenio-mx","name":"Milenio","feedURL":"https://www.milenio.com/rss","siteURL":"https://www.milenio.com","category":"General","language":"es","countryCode":"MX","scope":"local"},
+  {"id":"proceso-mx","name":"Proceso","feedURL":"https://www.proceso.com.mx/rss","siteURL":"https://www.proceso.com.mx","category":"General","language":"es","countryCode":"MX","scope":"local"},
+
+  {"id":"clarin-ar","name":"Clarín","feedURL":"https://www.clarin.com/rss/","siteURL":"https://www.clarin.com","category":"General","language":"es","countryCode":"AR","scope":"local"},
+  {"id":"lanacion-ar","name":"La Nación","feedURL":"https://www.lanacion.com.ar/arc/outboundfeeds/rss/","siteURL":"https://www.lanacion.com.ar","category":"General","language":"es","countryCode":"AR","scope":"local"},
+  {"id":"infobae-ar","name":"Infobae","feedURL":"https://www.infobae.com/feeds/rss/","siteURL":"https://www.infobae.com","category":"General","language":"es","countryCode":"AR","scope":"local"},
+  {"id":"pagina12-ar","name":"Página/12","feedURL":"https://www.pagina12.com.ar/rss/portada","siteURL":"https://www.pagina12.com.ar","category":"General","language":"es","countryCode":"AR","scope":"local"},
+
+  {"id":"eltiempo-co","name":"El Tiempo","feedURL":"https://www.eltiempo.com/rss/colombia.xml","siteURL":"https://www.eltiempo.com","category":"General","language":"es","countryCode":"CO","scope":"local"},
+  {"id":"elespectador-co","name":"El Espectador","feedURL":"https://www.elespectador.com/rss.xml","siteURL":"https://www.elespectador.com","category":"General","language":"es","countryCode":"CO","scope":"local"},
+  {"id":"semana-co","name":"Semana","feedURL":"https://www.semana.com/rss/","siteURL":"https://www.semana.com","category":"General","language":"es","countryCode":"CO","scope":"local"},
+
+  {"id":"emol-cl","name":"Emol","feedURL":"https://www.emol.com/rss/rss.aspx?tipo=1","siteURL":"https://www.emol.com","category":"General","language":"es","countryCode":"CL","scope":"local"},
+  {"id":"latercera-cl","name":"La Tercera","feedURL":"https://www.latercera.com/arc/outboundfeeds/rss/","siteURL":"https://www.latercera.com","category":"General","language":"es","countryCode":"CL","scope":"local"},
+  {"id":"biobio-cl","name":"BioBioChile","feedURL":"https://www.biobiochile.cl/listado/rss","siteURL":"https://www.biobiochile.cl","category":"General","language":"es","countryCode":"CL","scope":"local"},
+
+  {"id":"elcomercio-pe","name":"El Comercio","feedURL":"https://elcomercio.pe/arc/outboundfeeds/rss/","siteURL":"https://elcomercio.pe","category":"General","language":"es","countryCode":"PE","scope":"local"},
+  {"id":"larepublica-pe","name":"La República","feedURL":"https://larepublica.pe/rss/","siteURL":"https://larepublica.pe","category":"General","language":"es","countryCode":"PE","scope":"local"},
+
+  {"id":"npr-us","name":"NPR News","feedURL":"https://feeds.npr.org/1001/rss.xml","siteURL":"https://www.npr.org","category":"General","language":"en","countryCode":"US","scope":"local"},
+  {"id":"nyt-us","name":"The New York Times","feedURL":"https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml","siteURL":"https://www.nytimes.com","category":"General","language":"en","countryCode":"US","scope":"local"},
+  {"id":"cnn-us","name":"CNN","feedURL":"http://rss.cnn.com/rss/cnn_topstories.rss","siteURL":"https://www.cnn.com","category":"General","language":"en","countryCode":"US","scope":"local"},
+  {"id":"techcrunch","name":"TechCrunch","feedURL":"https://techcrunch.com/feed/","siteURL":"https://techcrunch.com","category":"Tecnología","language":"en","countryCode":"US","scope":"local"},
+  {"id":"arstechnica","name":"Ars Technica","feedURL":"https://feeds.arstechnica.com/arstechnica/index","siteURL":"https://arstechnica.com","category":"Tecnología","language":"en","countryCode":"US","scope":"local"},
+  {"id":"theverge","name":"The Verge","feedURL":"https://www.theverge.com/rss/index.xml","siteURL":"https://www.theverge.com","category":"Tecnología","language":"en","countryCode":"US","scope":"local"},
+  {"id":"wired-us","name":"Wired","feedURL":"https://www.wired.com/feed/rss","siteURL":"https://www.wired.com","category":"Tecnología","language":"en","countryCode":"US","scope":"local"},
+  {"id":"ap-us","name":"AP News","feedURL":"https://apnews.com/index.rss","siteURL":"https://apnews.com","category":"General","language":"en","countryCode":"US","scope":"local"},
+
+  {"id":"bbc-uk","name":"BBC News","feedURL":"https://feeds.bbci.co.uk/news/rss.xml","siteURL":"https://www.bbc.com/news","category":"General","language":"en","countryCode":"GB","scope":"local"},
+  {"id":"guardian-uk","name":"The Guardian","feedURL":"https://www.theguardian.com/world/rss","siteURL":"https://www.theguardian.com","category":"General","language":"en","countryCode":"GB","scope":"local"},
+  {"id":"independent-uk","name":"The Independent","feedURL":"https://www.independent.co.uk/news/world/rss","siteURL":"https://www.independent.co.uk","category":"General","language":"en","countryCode":"GB","scope":"local"},
+  {"id":"sky-uk","name":"Sky News","feedURL":"https://feeds.skynews.com/feeds/rss/home.xml","siteURL":"https://news.sky.com","category":"General","language":"en","countryCode":"GB","scope":"local"},
+
+  {"id":"lemonde-fr","name":"Le Monde","feedURL":"https://www.lemonde.fr/rss/une.xml","siteURL":"https://www.lemonde.fr","category":"General","language":"fr","countryCode":"FR","scope":"local"},
+  {"id":"france24-fr","name":"France 24","feedURL":"https://www.france24.com/en/rss","siteURL":"https://www.france24.com","category":"General","language":"fr","countryCode":"FR","scope":"local"},
+  {"id":"liberation-fr","name":"Libération","feedURL":"https://www.liberation.fr/arc/outboundfeeds/rss-all/","siteURL":"https://www.liberation.fr","category":"General","language":"fr","countryCode":"FR","scope":"local"},
+
+  {"id":"dw-de","name":"Deutsche Welle","feedURL":"https://rss.dw.com/rdf/rss-en-all","siteURL":"https://www.dw.com","category":"General","language":"de","countryCode":"DE","scope":"local"},
+  {"id":"spiegel-de","name":"Der Spiegel","feedURL":"https://www.spiegel.de/schlagzeilen/index.rss","siteURL":"https://www.spiegel.de","category":"General","language":"de","countryCode":"DE","scope":"local"},
+  {"id":"zeit-de","name":"Die Zeit","feedURL":"https://newsfeed.zeit.de/index","siteURL":"https://www.zeit.de","category":"General","language":"de","countryCode":"DE","scope":"local"},
+
+  {"id":"repubblica-it","name":"La Repubblica","feedURL":"https://www.repubblica.it/rss/homepage/rss2.0.xml","siteURL":"https://www.repubblica.it","category":"General","language":"it","countryCode":"IT","scope":"local"},
+  {"id":"corriere-it","name":"Corriere della Sera","feedURL":"https://xml2.corriereobjects.it/rss/homepage.xml","siteURL":"https://www.corriere.it","category":"General","language":"it","countryCode":"IT","scope":"local"},
+  {"id":"ansa-it","name":"ANSA","feedURL":"https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml","siteURL":"https://www.ansa.it","category":"General","language":"it","countryCode":"IT","scope":"local"},
+
+  {"id":"publico-pt","name":"Público","feedURL":"https://www.publico.pt/rss","siteURL":"https://www.publico.pt","category":"General","language":"pt","countryCode":"PT","scope":"local"},
+  {"id":"observador-pt","name":"Observador","feedURL":"https://observador.pt/feed/","siteURL":"https://observador.pt","category":"General","language":"pt","countryCode":"PT","scope":"local"},
+
+  {"id":"folha-br","name":"Folha de S.Paulo","feedURL":"https://feeds.folha.uol.com.br/emcimadahora/rss091.xml","siteURL":"https://www.folha.uol.com.br","category":"General","language":"pt","countryCode":"BR","scope":"local"},
+  {"id":"g1-br","name":"G1","feedURL":"https://g1.globo.com/rss/g1/","siteURL":"https://g1.globo.com","category":"General","language":"pt","countryCode":"BR","scope":"local"},
+  {"id":"uol-br","name":"UOL Notícias","feedURL":"https://rss.uol.com.br/feed/index.xml","siteURL":"https://noticias.uol.com.br","category":"General","language":"pt","countryCode":"BR","scope":"local"},
+
+  {"id":"bbc-world","name":"BBC World","feedURL":"https://feeds.bbci.co.uk/news/world/rss.xml","siteURL":"https://www.bbc.com/news/world","category":"Internacional","language":"en","countryCode":"INT","scope":"international"},
+  {"id":"reuters-int","name":"Reuters World","feedURL":"https://feeds.reuters.com/reuters/worldNews","siteURL":"https://www.reuters.com","category":"Internacional","language":"en","countryCode":"INT","scope":"international"},
+  {"id":"aljazeera-int","name":"Al Jazeera English","feedURL":"https://www.aljazeera.com/xml/rss/all.xml","siteURL":"https://www.aljazeera.com","category":"Internacional","language":"en","countryCode":"INT","scope":"international"},
+  {"id":"dw-int","name":"DW English","feedURL":"https://rss.dw.com/rdf/rss-en-world","siteURL":"https://www.dw.com","category":"Internacional","language":"en","countryCode":"INT","scope":"international"},
+  {"id":"france24-int","name":"France 24 English","feedURL":"https://www.france24.com/en/rss","siteURL":"https://www.france24.com/en","category":"Internacional","language":"en","countryCode":"INT","scope":"international"},
+  {"id":"euronews-int","name":"Euronews","feedURL":"https://www.euronews.com/rss?format=mrss","siteURL":"https://www.euronews.com","category":"Internacional","language":"en","countryCode":"INT","scope":"international"}
+]

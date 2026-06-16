@@ -1,0 +1,89 @@
+name: Prisma
+options:
+  bundleIdPrefix: com.prisma
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: es
+  xcodeVersion: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  Prisma:
+    type: application
+    platform: iOS
+    sources:
+      - path: Prisma
+        excludes:
+          - "**/.DS_Store"
+          - Info.plist
+    resources:
+      - path: Prisma/Resources
+      - path: Prisma/Configuration/StoreKitConfiguration.storekit
+    info:
+      path: Prisma/Info.plist
+      properties:
+        CFBundleDisplayName: Prisma
+        LSRequiresIPhoneOS: true
+        UIRequiresFullScreen: true
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        INFOPLIST_FILE: Prisma/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.prisma.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_PREVIEWS: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+        Release:
+          SWIFT_COMPILATION_MODE: wholemodule
+
+  PrismaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - PrismaTests
+    dependencies:
+      - target: Prisma
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.prisma.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Prisma.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prisma"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+
+schemes:
+  Prisma:
+    build:
+      targets:
+        Prisma: all
+        PrismaTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - PrismaTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
