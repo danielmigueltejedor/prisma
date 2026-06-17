@@ -91,9 +91,9 @@ struct TodayView: View {
             imageURL: article.imageUrl.flatMap(URL.init(string:)),
             isRead: article.isRead,
             isSaved: article.isSaved,
-            readingTimeMinutes: article.readingTimeEstimate,
             likeCount: article.likeCount,
             viewCount: article.viewCount,
+            readingTimeMinutes: article.readingTimeEstimate,
             sourceSiteURL: article.feedSource?.siteURL,
             sourceFeedURL: article.originalFeedUrl
           )
