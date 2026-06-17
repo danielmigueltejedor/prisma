@@ -4,6 +4,7 @@ extension Notification.Name {
   static let feedsDidRefresh = Notification.Name("Prisma.feedsDidRefresh")
   static let articleLibraryDidChange = Notification.Name("Prisma.articleLibraryDidChange")
   static let preferencesDidChange = Notification.Name("Prisma.preferencesDidChange")
+  static let articleTranslationsDidUpdate = Notification.Name("Prisma.articleTranslationsDidUpdate")
 }
 
 @MainActor

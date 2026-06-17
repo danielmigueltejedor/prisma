@@ -5,75 +5,105 @@ struct ForYouView: View {
   var previewStore: ArticlePreviewTranslationStore
   var makeReaderViewModel: (Article) -> ArticleReaderViewModel
   var onSelectArticle: (Article) -> Void
+  var onOpenSources: (() -> Void)?
 
   @State private var selectedCluster: ClusterDTO?
+  @State private var pendingArticleFromCluster: Article?
   @State private var lastPreviewArticleIDs: [String] = []
+  @State private var showErrorAlert = false
 
   var body: some View {
     NavigationStack {
-      PrismaScreen {
-        if viewModel.articles.isEmpty {
-          EmptyStateView(
-            icon: "sparkles",
-            title: String(localized: "foryou.empty.title"),
-            message: String(localized: "foryou.empty.message")
-          )
-        } else if viewModel.cascadeViewEnabled {
-          ForYouCascadeView(
-            viewModel: viewModel,
-            makeReaderViewModel: { article in
-              viewModel.cascadeReader(for: article, factory: makeReaderViewModel)
-            }
-          )
-        } else {
-          listFeed
+      feedScreen
+        .sheet(item: $selectedCluster, content: clusterSheet)
+        .onChange(of: selectedCluster?.id) { _, _ in
+          handleClusterDismissal()
         }
-      }
-      .navigationTitle(viewModel.cascadeViewEnabled ? "" : String(localized: "tab.foryou"))
-      .toolbar(viewModel.cascadeViewEnabled ? .hidden : .visible, for: .navigationBar)
-      .onAppear {
-        viewModel.loadIfNeeded()
-        refreshPreviewsIfNeeded()
-      }
-      .onChange(of: viewModel.listFeedRefreshToken) { _, _ in
-        refreshPreviewsIfNeeded()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
-        viewModel.handleFeedsRefreshed()
-        refreshPreviewsIfNeeded()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .articleLibraryDidChange)) { _ in
-        viewModel.handleLibraryChanged()
-      }
-      .onReceive(NotificationCenter.default.publisher(for: .preferencesDidChange)) { _ in
-        viewModel.handlePreferencesChanged()
-      }
-      .background {
-        TabBarReTapDetector(selectedIndex: 1) {
-          viewModel.refreshFromTabReTap()
-        }
-      }
-      .overlay {
-        if !viewModel.cascadeViewEnabled, viewModel.isLoadingAI, viewModel.clusters.isEmpty {
-          ProgressView()
-            .padding()
-            .prismaGlass()
-        }
-      }
-      .sheet(item: $selectedCluster) { cluster in
-        ClusterDetailView(
-          cluster: cluster,
-          articles: viewModel.articles(for: cluster),
-          previewStore: previewStore,
-          onSelectArticle: { article in
-            selectedCluster = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-              onSelectArticle(article)
-            }
+    }
+  }
+
+  private var feedScreen: some View {
+    PrismaScreen {
+      if viewModel.isLoadingRanking && viewModel.articles.isEmpty {
+        LoadingView(message: String(localized: "foryou.loading"))
+      } else if viewModel.articles.isEmpty {
+        EmptyStateView(
+          icon: "sparkles",
+          title: String(localized: "foryou.empty.title"),
+          message: String(localized: "foryou.empty.message"),
+          actionTitle: String(localized: "foryou.empty.action"),
+          action: { onOpenSources?() }
+        )
+      } else if viewModel.cascadeViewEnabled {
+        ForYouCascadeView(
+          viewModel: viewModel,
+          makeReaderViewModel: { article in
+            viewModel.cascadeReader(for: article, factory: makeReaderViewModel)
           }
         )
+      } else {
+        listFeed
       }
     }
+    .navigationTitle(viewModel.cascadeViewEnabled ? "" : String(localized: "tab.foryou"))
+    .toolbar(viewModel.cascadeViewEnabled ? .hidden : .visible, for: .navigationBar)
+    .onAppear {
+      viewModel.loadIfNeeded()
+      refreshPreviewsIfNeeded()
+    }
+    .onChange(of: viewModel.listFeedRefreshToken) { _, _ in
+      refreshPreviewsIfNeeded()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
+      viewModel.handleFeedsRefreshed()
+      refreshPreviewsIfNeeded()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .articleLibraryDidChange)) { _ in
+      viewModel.handleLibraryChanged()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .preferencesDidChange)) { _ in
+      viewModel.handlePreferencesChanged()
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .articleTranslationsDidUpdate)) { _ in
+      refreshPreviewsIfNeeded(force: true)
+    }
+    .onChange(of: viewModel.errorMessage) { _, message in
+      showErrorAlert = message != nil
+    }
+    .alert(String(localized: "error.generic"), isPresented: $showErrorAlert) {
+      Button(String(localized: "action.close"), role: .cancel) {
+        viewModel.errorMessage = nil
+      }
+    } message: {
+      if let message = viewModel.errorMessage {
+        Text(message)
+      }
+    }
+    .overlay {
+      if !viewModel.cascadeViewEnabled, viewModel.isLoadingAI, viewModel.clusters.isEmpty {
+        ProgressView()
+          .padding()
+          .prismaGlass()
+      }
+    }
+  }
+
+  private func clusterSheet(cluster: ClusterDTO) -> some View {
+    ClusterDetailView(
+      cluster: cluster,
+      articles: viewModel.articles(for: cluster),
+      previewStore: previewStore,
+      onSelectArticle: { article in
+        pendingArticleFromCluster = article
+        selectedCluster = nil
+      }
+    )
+  }
+
+  private func handleClusterDismissal() {
+    guard selectedCluster == nil, let article = pendingArticleFromCluster else { return }
+    pendingArticleFromCluster = nil
+    onSelectArticle(article)
   }
 
   private var listFeed: some View {
@@ -96,7 +126,11 @@ struct ForYouView: View {
 
           ForEach(viewModel.articles.prefix(30), id: \.id) { article in
             Button { onSelectArticle(article) } label: {
-              TranslatedArticleCard(article: article, previewStore: previewStore)
+              TranslatedArticleCard(
+                article: article,
+                previewStore: previewStore,
+                recommendationReason: viewModel.recommendationReason(for: article)
+              )
             }
             .buttonStyle(.plain)
           }
@@ -111,11 +145,15 @@ struct ForYouView: View {
     }
   }
 
-  private func refreshPreviewsIfNeeded() {
+  private func refreshPreviewsIfNeeded(force: Bool = false) {
     let ids = viewModel.articles.prefix(30).map(\.id)
-    guard ids != lastPreviewArticleIDs else { return }
+    if !force, ids == lastPreviewArticleIDs { return }
     lastPreviewArticleIDs = ids
-    previewStore.refresh(for: viewModel.articles)
+    if force {
+      previewStore.forceRefresh(for: viewModel.articles)
+    } else {
+      previewStore.refresh(for: viewModel.articles)
+    }
   }
 
   private func clusterCard(_ cluster: ClusterDTO) -> some View {

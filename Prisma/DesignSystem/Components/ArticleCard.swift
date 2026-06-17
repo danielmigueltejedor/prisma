@@ -15,6 +15,7 @@ struct ArticleCard: View {
   var sourceFeedURL: String? = nil
   var platform: FeedPlatform = .news
   var isLive: Bool = false
+  var recommendationReason: String? = nil
 
   var body: some View {
     HStack(alignment: .top, spacing: PrismaSpacing.sm) {
@@ -51,6 +52,13 @@ struct ArticleCard: View {
           if isLive {
             LiveCoverageDot()
           }
+        }
+
+        if let recommendationReason, !recommendationReason.isEmpty {
+          Text(recommendationReason)
+            .font(PrismaTypography.caption2())
+            .foregroundStyle(PrismaColors.accentFallback.opacity(0.85))
+            .lineLimit(1)
         }
 
         Text(title)

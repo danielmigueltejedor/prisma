@@ -15,6 +15,7 @@ final class Article {
   var plainSummary: String?
   var content: String?
   var imageUrl: String?
+  var videoUrl: String?
   var categoryNames: [String]
   var isRead: Bool
   var isSaved: Bool
@@ -47,6 +48,11 @@ final class Article {
     return URL(string: ArticleImageURLResolver.resolve(imageUrl))
   }
 
+  var resolvedVideoURL: URL? {
+    guard let videoUrl else { return nil }
+    return ArticleMediaExtractor.resolvePlayableVideoURL(videoUrl)
+  }
+
   init(
     id: String,
     title: String,
@@ -60,6 +66,7 @@ final class Article {
     plainSummary: String? = nil,
     content: String? = nil,
     imageUrl: String? = nil,
+    videoUrl: String? = nil,
     categoryNames: [String] = [],
     isRead: Bool = false,
     isSaved: Bool = false,
@@ -84,6 +91,7 @@ final class Article {
     self.plainSummary = plainSummary
     self.content = content
     self.imageUrl = imageUrl
+    self.videoUrl = videoUrl
     self.categoryNames = categoryNames
     self.isRead = isRead
     self.isSaved = isSaved

@@ -22,6 +22,11 @@ final class ArticlePreviewTranslationStore {
     byArticleId = translationService.cachedTranslations(for: articles)
   }
 
+  func forceRefresh(for articles: [Article]) {
+    lastArticleIDs = []
+    refresh(for: articles)
+  }
+
   private var lastArticleIDs: [String] = []
 
   func preview(for article: Article) -> ArticlePreviewText {

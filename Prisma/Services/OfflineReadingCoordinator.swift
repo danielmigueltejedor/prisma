@@ -4,7 +4,7 @@ import Foundation
 final class OfflineReadingCoordinator {
   private static let staleFeedInterval: TimeInterval = 30 * 60
   private static let prefetchCooldown: TimeInterval = 5 * 60
-  private static let translationPrefetchLimit = 8
+  private static let translationPrefetchLimit = 3
   private static let imagePrefetchLimit = 15
   private static let redditPrefetchLimit = 3
 

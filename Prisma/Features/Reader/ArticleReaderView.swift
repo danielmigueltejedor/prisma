@@ -24,8 +24,8 @@ struct ArticleReaderView: View {
             translationBanner
           }
 
-          if !viewModel.imageURLs.isEmpty {
-            ArticleImageCarousel(imageURLs: viewModel.imageURLs) { index in
+          if !viewModel.mediaItems.isEmpty {
+            ArticleMediaCarousel(mediaItems: viewModel.mediaItems) { index in
               galleryIndex = index
               showImageGallery = true
             }
@@ -104,8 +104,8 @@ struct ArticleReaderView: View {
       .onAppear { viewModel.onAppear() }
       .onDisappear { viewModel.onDisappear() }
       .fullScreenCover(isPresented: $showImageGallery) {
-        ArticleImageGalleryView(
-          imageURLs: viewModel.imageURLs,
+        ArticleMediaGalleryView(
+          mediaItems: viewModel.mediaItems,
           selectedIndex: $galleryIndex
         )
       }
@@ -143,6 +143,7 @@ struct ArticleReaderView: View {
           isActive: viewModel.isSaved,
           accessibilityLabel: String(localized: "action.save")
         ) {
+          HapticFeedback.light()
           viewModel.toggleSaved()
         }
         ReaderToolbarIconButton(
@@ -150,6 +151,7 @@ struct ArticleReaderView: View {
           isActive: viewModel.isFavorite,
           accessibilityLabel: String(localized: "action.favorite")
         ) {
+          HapticFeedback.medium()
           viewModel.toggleFavorite()
         }
       }
@@ -167,7 +169,7 @@ struct ArticleReaderView: View {
         baseURL: normalizedArticleURL(),
         fontFamily: viewModel.readerFontFamily,
         fontSizeMultiplier: viewModel.readerFontSizeMultiplier,
-        suppressInlineImages: !viewModel.imageURLs.isEmpty,
+        suppressInlineImages: !viewModel.mediaItems.isEmpty,
         onOpenExternalURL: { url in openURL(url) }
       )
     } else if let plain = viewModel.plainBodyText {

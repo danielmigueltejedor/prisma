@@ -102,7 +102,7 @@ enum HTMLSanitizer {
     suppressInlineImages: Bool = false
   ) -> String {
     let sanitized = suppressInlineImages
-      ? (stripImageTags(from: sanitizeForReader(html)) ?? "")
+      ? (stripInlineMedia(from: stripImageTags(from: sanitizeForReader(html)) ?? "") ?? "")
       : (sanitizeForReader(html) ?? "")
 
     let textColor = colorScheme == .dark ? "#F2F2F7" : "#1C1C1E"
@@ -146,6 +146,11 @@ enum HTMLSanitizer {
       display: \(suppressInlineImages ? "none" : "block");
     }
     figcaption { font-size: 0.85em; color: \(secondary); margin-top: 0.4em; }
+    video, iframe, embed, object {
+      max-width: 100%;
+      margin: 1em 0;
+      display: \(suppressInlineImages ? "none" : "block");
+    }
     a { color: \(link); text-decoration: none; }
     blockquote {
       border-left: 3px solid \(secondary);
@@ -315,6 +320,26 @@ enum HTMLSanitizer {
       with: "",
       options: [.regularExpression, .caseInsensitive]
     )
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
+  private static func stripInlineMedia(from html: String?) -> String? {
+    guard let html else { return nil }
+    var output = html
+    let patterns = [
+      "<video\\b[\\s\\S]*?</video>",
+      "<iframe\\b[^>]*>[\\s\\S]*?</iframe>",
+      "<iframe\\b[^>]*/>",
+      "<embed\\b[^>]*>",
+      "<object\\b[\\s\\S]*?</object>",
+    ]
+    for pattern in patterns {
+      output = output.replacingOccurrences(
+        of: pattern,
+        with: "",
+        options: [.regularExpression, .caseInsensitive]
+      )
+    }
     return output.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 

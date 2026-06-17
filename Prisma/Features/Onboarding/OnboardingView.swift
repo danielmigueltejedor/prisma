@@ -57,12 +57,79 @@ struct OnboardingView: View {
   }
 
   private var sourcesPage: some View {
-    onboardingPage(
-      icon: "antenna.radiowaves.left.and.right",
-      title: String(localized: "onboarding.sources.title"),
-      subtitle: String(localized: "onboarding.sources.subtitle"),
-      body: String(localized: "onboarding.sources.body")
-    )
+    VStack(spacing: PrismaSpacing.md) {
+      VStack(spacing: PrismaSpacing.xs) {
+        Image(systemName: "antenna.radiowaves.left.and.right")
+          .font(.system(size: 44))
+          .foregroundStyle(PrismaColors.accentFallback)
+          .padding(.top, PrismaSpacing.lg)
+
+        Text(String(localized: "onboarding.sources.title"))
+          .font(PrismaTypography.title(.semibold))
+          .multilineTextAlignment(.center)
+
+        Text(String(localized: "onboarding.sources.subtitle"))
+          .font(PrismaTypography.callout())
+          .foregroundStyle(PrismaColors.textSecondary)
+          .multilineTextAlignment(.center)
+
+        Text(String(localized: "onboarding.sources.pick"))
+          .font(PrismaTypography.caption())
+          .foregroundStyle(PrismaColors.textTertiary)
+          .multilineTextAlignment(.center)
+          .padding(.horizontal, PrismaSpacing.lg)
+      }
+
+      ScrollView {
+        LazyVStack(spacing: PrismaSpacing.sm) {
+          ForEach(viewModel.suggestedFeeds) { feed in
+            onboardingFeedRow(feed)
+          }
+        }
+        .padding(.horizontal, PrismaSpacing.lg)
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
+
+  private func onboardingFeedRow(_ feed: RecommendedFeed) -> some View {
+    let isSelected = viewModel.isFeedSelected(feed.id)
+    return Button {
+      viewModel.toggleFeed(feed.id)
+    } label: {
+      HStack(spacing: PrismaSpacing.md) {
+        SourceIconView(
+          siteURL: feed.siteURL,
+          feedURL: feed.feedURL,
+          platform: feed.feedPlatform,
+          size: 28
+        )
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(feed.name)
+            .font(PrismaTypography.callout(.semibold))
+            .foregroundStyle(PrismaColors.textPrimary)
+            .lineLimit(1)
+          if let description = feed.description {
+            Text(description)
+              .font(PrismaTypography.caption2())
+              .foregroundStyle(PrismaColors.textSecondary)
+              .lineLimit(2)
+          }
+        }
+
+        Spacer(minLength: PrismaSpacing.sm)
+
+        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+          .font(.title3)
+          .foregroundStyle(isSelected ? PrismaColors.accentFallback : PrismaColors.separator)
+      }
+      .padding(PrismaSpacing.md)
+      .prismaGlass(cornerRadius: PrismaRadius.md)
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel(feed.name)
+    .accessibilityAddTraits(isSelected ? .isSelected : [])
   }
 
   private var privacyPage: some View {

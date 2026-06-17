@@ -63,6 +63,9 @@ struct TodayView: View {
       .onChange(of: viewModel.articles.count) { _, _ in
         previewStore.refresh(for: viewModel.articles)
       }
+      .onReceive(NotificationCenter.default.publisher(for: .articleTranslationsDidUpdate)) { _ in
+        previewStore.forceRefresh(for: viewModel.articles)
+      }
       .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
         viewModel.handleFeedsRefreshed()
         previewStore.refresh(for: viewModel.articles)
@@ -71,13 +74,26 @@ struct TodayView: View {
         viewModel.reload()
         previewStore.refresh(for: viewModel.articles)
       }
+      .onChange(of: viewModel.scrollToTopToken) { _, _ in
+        if isSearchExpanded {
+          isSearchExpanded = false
+          searchFocused = false
+        }
+      }
     }
   }
 
   private var todayBrowseMode: some View {
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: PrismaSpacing.md) {
-        browseFilters
+    ScrollViewReader { proxy in
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: PrismaSpacing.md) {
+          Color.clear.frame(height: 0).id("today-scroll-top")
+
+          browseFilters
+
+        if let briefing = viewModel.dailyBriefing {
+          dailyBriefingCard(briefing)
+        }
 
         sectionHeader(String(localized: "today.section.latest"))
         articleRows(viewModel.latestArticles)
@@ -96,6 +112,13 @@ struct TodayView: View {
     }
     .refreshable { await viewModel.refresh() }
     .captureNativeScrollOffset($headerScrollOffset)
+    .onChange(of: viewModel.scrollToTopToken) { _, _ in
+      withAnimation(.easeOut(duration: 0.2)) {
+        proxy.scrollTo("today-scroll-top", anchor: .top)
+      }
+      headerScrollOffset = 0
+    }
+    }
   }
 
   private var todaySearchMode: some View {
@@ -140,6 +163,29 @@ struct TodayView: View {
       .font(PrismaTypography.title())
       .foregroundStyle(PrismaColors.textPrimary)
       .padding(.top, PrismaSpacing.xxs)
+  }
+
+  private func dailyBriefingCard(_ briefing: DailyBriefingDTO) -> some View {
+    VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
+      HStack(spacing: PrismaSpacing.xs) {
+        Image(systemName: "sun.horizon.fill")
+          .foregroundStyle(PrismaColors.accentFallback)
+        Text(briefing.title)
+          .font(PrismaTypography.headline())
+      }
+      ForEach(Array(briefing.sections.prefix(3).enumerated()), id: \.offset) { _, section in
+        VStack(alignment: .leading, spacing: PrismaSpacing.xxs) {
+          Text(section.headline)
+            .font(PrismaTypography.callout(.semibold))
+          Text(section.summary)
+            .font(PrismaTypography.caption())
+            .foregroundStyle(PrismaColors.textSecondary)
+            .lineLimit(3)
+        }
+      }
+    }
+    .padding(PrismaSpacing.md)
+    .prismaGlass()
   }
 
   @ViewBuilder

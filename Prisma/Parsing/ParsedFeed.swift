@@ -17,6 +17,7 @@ struct ParsedArticle {
   var summary: String?
   var content: String?
   var imageURL: String?
+  var videoURL: String? = nil
   var categories: [String]
   var contentAvailability: ContentAvailability
 

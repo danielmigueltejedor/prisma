@@ -198,9 +198,27 @@ final class FeedSourceRepository {
     let international = catalog.filter(\.isInternational)
 
     let toEnable = Array(local.prefix(3)) + Array(international.prefix(1))
-    let allSources = try fetchAll()
+    try enableFeeds(toEnable, allSources: try fetchAll())
+  }
 
-    for feed in toEnable {
+  func enableSources(ids: Set<String>, countryCode: String) throws {
+    guard !ids.isEmpty else {
+      try enableDefaultSources(forCountry: countryCode)
+      return
+    }
+
+    let catalog = RecommendedFeeds.loadFromBundle()
+    let feeds = catalog.filter { ids.contains($0.id) }
+    let allSources = try fetchAll()
+    try enableFeeds(feeds, allSources: allSources)
+
+    if try fetchEnabled().isEmpty {
+      try enableDefaultSources(forCountry: countryCode)
+    }
+  }
+
+  private func enableFeeds(_ feeds: [RecommendedFeed], allSources: [FeedSource]) throws {
+    for feed in feeds {
       guard let source = allSources.first(where: { RecommendedFeeds.matching($0)?.id == feed.id }) else {
         continue
       }

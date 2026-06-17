@@ -229,22 +229,6 @@
         }
       }
     },
-    "ai.requirements.devices" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requires iPhone 15 Pro or later with iOS 26+ and Apple Intelligence enabled."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requiere iPhone 15 Pro o posterior con iOS 26+ y Apple Intelligence activado."
-          }
-        }
-      }
-    },
     "ai.availability.modelDownloading" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -308,6 +292,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "IA local gratuita (Apple Intelligence)"
+          }
+        }
+      }
+    },
+    "ai.requirements.devices" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requires iPhone 15 Pro or later with iOS 26+ and Apple Intelligence enabled."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requiere iPhone 15 Pro o posterior con iOS 26+ y Apple Intelligence activado."
           }
         }
       }
@@ -1088,6 +1088,22 @@
         }
       }
     },
+    "foryou.empty.action" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add sources"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir fuentes"
+          }
+        }
+      }
+    },
     "foryou.empty.message" : {
       "localizations" : {
         "en" : {
@@ -1116,6 +1132,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin recomendaciones"
+          }
+        }
+      }
+    },
+    "foryou.loading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizing your feed…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizando tu feed…"
           }
         }
       }
@@ -1167,6 +1199,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desbloquea Para ti inteligente"
+          }
+        }
+      }
+    },
+    "foryou.reason.exploring" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggested to broaden your interests"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerido para ampliar tus intereses"
+          }
+        }
+      }
+    },
+    "foryou.reason.favoriteSource" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From a source you follow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De una fuente que sigues"
+          }
+        }
+      }
+    },
+    "foryou.reason.fresh" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fresh and unread"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reciente y sin leer"
+          }
+        }
+      }
+    },
+    "foryou.reason.recentInterest" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Based on what you read lately"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según lo que lees últimamente"
+          }
+        }
+      }
+    },
+    "foryou.reason.savedTopic" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Matches topics you save"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coincide con temas que guardas"
           }
         }
       }
@@ -1343,6 +1455,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cargando…"
+          }
+        }
+      }
+    },
+    "offline.banner.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're offline — showing saved and cached articles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin conexión — mostrando artículos guardados y en caché"
           }
         }
       }
@@ -1526,6 +1654,7 @@
       }
     },
     "onboarding.sources.body" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1537,6 +1666,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Añade fuentes RSS manualmente o elige de nuestras recomendaciones."
+          }
+        }
+      }
+    },
+    "onboarding.sources.pick" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick up to 10 feeds to start. You can change them anytime."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige hasta 10 fuentes para empezar. Puedes cambiarlas cuando quieras."
           }
         }
       }
@@ -2539,6 +2684,7 @@
       }
     },
     "reader.openImageGalleryHint" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2586,6 +2732,22 @@
         }
       }
     },
+    "reader.openMediaGalleryHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the media gallery"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la galería de medios"
+          }
+        }
+      }
+    },
     "reader.openOriginal" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2599,6 +2761,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Leer en la fuente original"
+          }
+        }
+      }
+    },
+    "reader.openVideo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play video"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reproducir vídeo"
+          }
+        }
+      }
+    },
+    "reader.openVideoHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the video player"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre el reproductor de vídeo"
           }
         }
       }
@@ -3083,6 +3277,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Colecciones"
+          }
+        }
+      }
+    },
+    "saved.collections.all" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas"
           }
         }
       }
@@ -4285,6 +4495,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "X (Twitter)"
+          }
+        }
+      }
+    },
+    "sources.success.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo"
           }
         }
       }

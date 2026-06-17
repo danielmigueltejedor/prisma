@@ -7,11 +7,13 @@ final class SavedViewModel {
   var favorites: [Article] = []
   var collections: [Collection] = []
   var selectedFilter: SavedFilter = .saved
+  var selectedCollectionID: UUID?
   var sourceFilter: UUID?
 
   private let articleRepository: ArticleRepository
   private let collectionRepository: CollectionRepository
   private let feedSourceRepository: FeedSourceRepository
+  private var hasLoadedData = false
 
   init(
     articleRepository: ArticleRepository,
@@ -68,10 +70,16 @@ final class SavedViewModel {
     if let sourceFilter {
       items = items.filter { $0.sourceId == sourceFilter }
     }
+    if let selectedCollectionID,
+       let collection = collections.first(where: { $0.id == selectedCollectionID }) {
+      let articleIDs = Set(collection.savedArticles.compactMap(\.article?.id))
+      items = items.filter { articleIDs.contains($0.id) }
+    }
     return items
   }
 
   func loadIfNeeded() {
+    guard !hasLoadedData else { return }
     reload()
   }
 
@@ -80,6 +88,7 @@ final class SavedViewModel {
       savedArticles = try articleRepository.fetchSaved()
       favorites = try articleRepository.fetchFavorites()
       collections = try collectionRepository.fetchAll()
+      hasLoadedData = true
     } catch {}
   }
 

@@ -126,6 +126,7 @@ final class RSSAtomParser: NSObject, FeedParserProtocol {
       summary: builder.summary,
       content: builder.content,
       imageURL: builder.imageURL,
+      videoURL: builder.videoURL,
       categories: builder.categories,
       contentAvailability: availability
     )
@@ -166,6 +167,7 @@ final class RSSAtomParser: NSObject, FeedParserProtocol {
     var content: String?
     var imageURL: String?
     var imageURLWidth: Int = 0
+    var videoURL: String?
     var categories: [String] = []
   }
 }
@@ -193,14 +195,21 @@ extension RSSAtomParser: XMLParserDelegate {
       if name == "link", let href = attributeDict["href"], !href.isEmpty {
         updated.link = href
       }
-      if name == "enclosure", let url = attributeDict["url"],
-         attributeDict["type"]?.contains("image") == true || updated.imageURL == nil {
-        updated.imageURL = ArticleImageURLResolver.resolve(url)
+      if name == "enclosure", let url = attributeDict["url"], !url.isEmpty {
+        let type = attributeDict["type"]?.lowercased() ?? ""
+        if type.hasPrefix("video/") {
+          updated.videoURL = url
+        } else if type.contains("image") || updated.imageURL == nil {
+          updated.imageURL = ArticleImageURLResolver.resolve(url)
+        }
       }
       if name == "media:content" || name == "media:thumbnail",
          let url = attributeDict["url"] {
+        let type = attributeDict["type"]?.lowercased() ?? ""
         let width = Int(attributeDict["width"] ?? "0") ?? 0
-        if updated.imageURL == nil || width >= updated.imageURLWidth {
+        if type.hasPrefix("video/") {
+          updated.videoURL = url
+        } else if updated.imageURL == nil || width >= updated.imageURLWidth {
           updated.imageURL = ArticleImageURLResolver.resolve(url)
           updated.imageURLWidth = width
         }

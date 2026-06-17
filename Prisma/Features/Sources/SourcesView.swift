@@ -15,8 +15,11 @@ struct SourcesView: View {
   @State private var editingSource: FeedSource?
   @State private var editedName = ""
   @State private var selectedSource: FeedSource?
+  @State private var pendingArticleFromSource: Article?
   @State private var isSearchExpanded = false
   @State private var headerScrollOffset: CGFloat = 0
+  @State private var showSourcesError = false
+  @State private var showSourcesSuccess = false
   @FocusState private var searchFocused: Bool
 
   var body: some View {
@@ -82,6 +85,33 @@ struct SourcesView: View {
       .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
         viewModel.reload()
       }
+      .onChange(of: viewModel.errorMessage) { _, message in
+        if message != nil { showSourcesError = true }
+      }
+      .onChange(of: viewModel.successMessage) { _, message in
+        if message != nil {
+          HapticFeedback.success()
+          showSourcesSuccess = true
+        }
+      }
+      .alert(String(localized: "error.generic"), isPresented: $showSourcesError) {
+        Button(String(localized: "action.close"), role: .cancel) {
+          viewModel.errorMessage = nil
+        }
+      } message: {
+        if let message = viewModel.errorMessage {
+          Text(message)
+        }
+      }
+      .alert(String(localized: "sources.success.title"), isPresented: $showSourcesSuccess) {
+        Button(String(localized: "action.close"), role: .cancel) {
+          viewModel.successMessage = nil
+        }
+      } message: {
+        if let message = viewModel.successMessage {
+          Text(message)
+        }
+      }
       .sheet(item: $selectedSource) { source in
         SourceDetailView(
           viewModel: SourceDetailViewModel(
@@ -92,12 +122,16 @@ struct SourcesView: View {
           ),
           previewStore: previewStore,
           onSelectArticle: { article in
+            pendingArticleFromSource = article
             selectedSource = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-              onSelectArticle(article)
-            }
           }
         )
+      }
+      .onChange(of: selectedSource) { _, newValue in
+        if newValue == nil, let article = pendingArticleFromSource {
+          pendingArticleFromSource = nil
+          onSelectArticle(article)
+        }
       }
     }
   }

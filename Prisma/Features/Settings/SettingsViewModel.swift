@@ -11,16 +11,19 @@ final class SettingsViewModel {
 
   private let preferenceRepository: PreferenceRepository
   private let feedSourceRepository: FeedSourceRepository
+  private let articleRepository: ArticleRepository
   private let weatherService: WeatherService
   private var weatherLookupTask: Task<Void, Never>?
 
   init(
     preferenceRepository: PreferenceRepository,
     feedSourceRepository: FeedSourceRepository,
+    articleRepository: ArticleRepository,
     weatherService: WeatherService
   ) {
     self.preferenceRepository = preferenceRepository
     self.feedSourceRepository = feedSourceRepository
+    self.articleRepository = articleRepository
     self.weatherService = weatherService
   }
 
@@ -130,10 +133,23 @@ final class SettingsViewModel {
   }
 
   func clearAllData() {
-    guard let sources = try? feedSourceRepository.fetchAll() else { return }
-    for source in sources {
-      try? feedSourceRepository.delete(source)
+    if let articles = try? articleRepository.fetchAll() {
+      for article in articles {
+        try? articleRepository.delete(article)
+      }
+    }
+    if let sources = try? feedSourceRepository.fetchAll() {
+      for source in sources {
+        try? feedSourceRepository.delete(source)
+      }
+    }
+    AIContentCacheStore.clear()
+    if let prefs = try? preferenceRepository.getOrCreate() {
+      prefs.blockedKeywords = []
+      prefs.cascadeSeenArticleIDs = []
+      try? preferenceRepository.save()
     }
     try? feedSourceRepository.seedRecommendedIfNeeded()
+    PreferencesNotifier.publish()
   }
 }

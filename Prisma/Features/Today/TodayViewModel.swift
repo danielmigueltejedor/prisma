@@ -16,6 +16,7 @@ final class TodayViewModel {
   var isLoading = false
   var errorMessage: String?
   var weather: WeatherSnapshot?
+  var scrollToTopToken = 0
 
   private let articleService: ArticleService
   private let feedService: FeedService
@@ -26,6 +27,7 @@ final class TodayViewModel {
   private var searchableTextByArticleId: [String: String] = [:]
   private var hasLoadedData = false
   private var searchTask: Task<Void, Never>?
+  private(set) var dailyBriefing: DailyBriefingDTO? = AIContentCacheStore.load()?.briefing
 
   init(
     articleService: ArticleService,
@@ -33,7 +35,6 @@ final class TodayViewModel {
     feedSourceRepository: FeedSourceRepository,
     preferenceRepository: PreferenceRepository,
     searchService: SearchService,
-    translationService: ArticleTranslationService,
     weatherService: WeatherService
   ) {
     self.articleService = articleService
@@ -42,7 +43,10 @@ final class TodayViewModel {
     self.preferenceRepository = preferenceRepository
     self.searchService = searchService
     self.weatherService = weatherService
-    _ = translationService
+  }
+
+  func refreshBriefingCache() {
+    dailyBriefing = AIContentCacheStore.load()?.briefing
   }
 
   var displayedArticles: [Article] {
@@ -73,6 +77,14 @@ final class TodayViewModel {
 
   func handleFeedsRefreshed() {
     reload()
+    refreshBriefingCache()
+  }
+
+  /// Pulsa de nuevo la pestaña Hoy: vuelve arriba y recarga feeds.
+  func refreshFromTabReTap() {
+    HapticFeedback.medium()
+    scrollToTopToken += 1
+    Task { await refresh() }
   }
 
   func reload() {
@@ -122,9 +134,16 @@ final class TodayViewModel {
       rebuildDisplayedCaches()
       return
     }
-    let needle = normalized(trimmed)
-    let base = showUnreadOnly ? articles.filter { !$0.isRead } : articles
-    searchResults = base.filter { searchableTextByArticleId[$0.id, default: ""].contains(needle) }
+    do {
+      var results = try searchService.search(query: trimmed, unreadOnly: showUnreadOnly)
+      if selectedStyle != "Todas" {
+        results = results.filter { ContentStyleFilter.style(for: $0) == selectedStyle }
+      }
+      searchResults = results
+    } catch {
+      searchResults = []
+      errorMessage = error.localizedDescription
+    }
     rebuildDisplayedCaches()
   }
 

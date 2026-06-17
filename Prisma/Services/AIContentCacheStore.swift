@@ -29,6 +29,10 @@ enum AIContentCacheStore {
     return Date().timeIntervalSince(cache.generatedAt) > refreshInterval
   }
 
+  static func clear() {
+    try? FileManager.default.removeItem(at: cacheURL)
+  }
+
   private static var cacheURL: URL {
     let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
       .appendingPathComponent("Prisma", isDirectory: true)

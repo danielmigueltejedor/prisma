@@ -3,6 +3,7 @@ import SwiftUI
 struct TranslatedArticleCard: View {
   let article: Article
   let previewStore: ArticlePreviewTranslationStore
+  var recommendationReason: String? = nil
 
   var body: some View {
     let preview = previewStore.preview(for: article)
@@ -20,7 +21,8 @@ struct TranslatedArticleCard: View {
       sourceSiteURL: article.feedSource?.siteURL,
       sourceFeedURL: article.originalFeedUrl,
       platform: article.feedSource?.effectivePlatform ?? .news,
-      isLive: LiveCoverageDetector.isLiveArticle(article)
+      isLive: LiveCoverageDetector.isLiveArticle(article),
+      recommendationReason: recommendationReason
     )
   }
 }

@@ -31,7 +31,6 @@ targets:
       properties:
         CFBundleDisplayName: Prisma
         LSRequiresIPhoneOS: true
-        UIRequiresFullScreen: true
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: true

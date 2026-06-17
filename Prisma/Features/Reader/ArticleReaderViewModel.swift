@@ -46,7 +46,18 @@ final class ArticleReaderViewModel {
   var isRefreshingLive = false
   var liveLastUpdated: Date?
 
-  var imageURLs: [URL] = []
+  var mediaItems: [ArticleMediaItem] = []
+
+  var imageURLs: [URL] {
+    mediaItems.compactMap { item in
+      switch item {
+      case .image(let url):
+        return url
+      case .video(_, let thumbnail):
+        return thumbnail
+      }
+    }
+  }
 
   private let articleService: ArticleService
   private let articleRepository: ArticleRepository
@@ -108,15 +119,19 @@ final class ArticleReaderViewModel {
     self.isFavorite = article.isFavorite
     self.cachedResolvedSource = article.feedSource
 
+    if let preferences = try? preferenceRepository.getOrCreate() {
+      readerFontFamily = preferences.readerFontFamily
+      readerFontSizeMultiplier = preferences.readerFontSizeMultiplier
+    }
+
+    if impressionMode == .cascadeTraining {
+      return
+    }
+
     cachedOriginalBodyHTML = Self.resolveOriginalBodyHTML(for: article)
     cachedPlainBodyText = cachedOriginalBodyHTML.flatMap { HTMLSanitizer.stripHTML($0) }
     if cachedOriginalBodyHTML != nil {
       hasPreparedPresentation = true
-    }
-
-    if let preferences = try? preferenceRepository.getOrCreate() {
-      readerFontFamily = preferences.readerFontFamily
-      readerFontSizeMultiplier = preferences.readerFontSizeMultiplier
     }
 
     if let cached = summaryService.cachedSummary(for: article) {
@@ -274,25 +289,27 @@ final class ArticleReaderViewModel {
 
     if impressionMode == .cascadeTraining {
       prepareForCascadeDisplay()
+      if needsTranslation, translation == nil {
+        enqueueReaderTask(priority: .utility) {
+          await self.prepareTranslation()
+        }
+      }
       if isLiveCoverage {
         reloadLiveEntries()
       }
       return
     }
 
-    if !hasPreparedPresentation {
+    if impressionMode == .standard, !hasPreparedPresentation {
       hasPreparedPresentation = true
       enqueueReaderTask(priority: .userInitiated) {
         await self.prepareArticlePresentation()
       }
     }
 
-    if impressionMode == .standard, !hasMarkedRead {
-      hasMarkedRead = true
-      enqueueReaderTask(priority: .background) {
-        await MainActor.run {
-          try? self.articleService.markRead(self.article)
-        }
+    if needsTranslation, translation == nil {
+      enqueueReaderTask(priority: .utility) {
+        await self.prepareTranslation()
       }
     }
 
@@ -330,6 +347,10 @@ final class ArticleReaderViewModel {
       return
     }
     let seconds = Date().timeIntervalSince(openedAt)
+    if seconds >= 2, !hasMarkedRead {
+      hasMarkedRead = true
+      try? articleService.markRead(article)
+    }
     try? articleService.recordDwellTime(article, seconds: seconds)
     self.openedAt = nil
   }
@@ -515,8 +536,8 @@ final class ArticleReaderViewModel {
       cachedOriginalBodyHTML = Self.resolveOriginalBodyHTML(for: article)
       cachedPlainBodyText = cachedOriginalBodyHTML.flatMap { HTMLSanitizer.stripHTML($0) }
     }
-    if imageURLs.isEmpty {
-      imageURLs = ArticleImageExtractor.imageURLs(for: article)
+    if mediaItems.isEmpty {
+      mediaItems = ArticleMediaExtractor.mediaItems(for: article)
     }
     if cachedResolvedSource == nil {
       cachedResolvedSource = try? feedSourceRepository.find(by: article.sourceId)
@@ -590,6 +611,19 @@ final class ArticleReaderViewModel {
 
     guard canUseAI else { return }
 
+    isLoadingAISimilarArticles = true
+    let similarService = SimilarArticlesService()
+    if let aiRanked = try? await similarService.aiRelated(
+      to: article,
+      from: candidates,
+      aiService: aiService,
+      limit: 8
+    ), !aiRanked.isEmpty {
+      similarArticles = aiRanked
+      similarArticlesPoweredByAI = true
+    }
+    isLoadingAISimilarArticles = false
+
     try? await Task.sleep(nanoseconds: 1_500_000_000)
     guard !Task.isCancelled else { return }
 
@@ -618,8 +652,8 @@ final class ArticleReaderViewModel {
 
     reloadLiveEntries()
 
-    if imageURLs.isEmpty {
-      imageURLs = ArticleImageExtractor.imageURLs(for: article)
+    if mediaItems.isEmpty {
+      mediaItems = ArticleMediaExtractor.mediaItems(for: article)
     }
     await Task.yield()
     guard !Task.isCancelled else { return }

@@ -24,6 +24,7 @@ final class AppDependencies {
   let insightRepository: AIArticleInsightRepository
   let weatherService: WeatherService
   let offlineReadingCoordinator: OfflineReadingCoordinator
+  let backgroundTranslationCoordinator: BackgroundTranslationCoordinator
 
   init(modelContainer: ModelContainer) {
     self.modelContainer = modelContainer
@@ -75,6 +76,14 @@ final class AppDependencies {
       redditCommentsService: redditCommentsService,
       redditCommentsTranslationService: redditCommentsTranslationService
     )
+    backgroundTranslationCoordinator = BackgroundTranslationCoordinator(
+      articleRepository: articleRepository,
+      feedSourceRepository: feedSourceRepository,
+      preferenceRepository: preferenceRepository,
+      translationService: translationService,
+      recommendationEngine: recommendationEngine,
+      previewStore: previewTranslationStore
+    )
   }
 
   func bootstrap() async throws {
@@ -82,6 +91,7 @@ final class AppDependencies {
     _ = try preferenceRepository.getOrCreate()
     try enableDefaultSourcesIfNeeded()
     offlineReadingCoordinator.schedulePrefetch()
+    backgroundTranslationCoordinator.scheduleSweep(priority: .userInitiated)
   }
 
   func refreshEnabledSourcesOnLaunchIfNeeded() async {

@@ -1,13 +1,13 @@
 import SwiftUI
 import UIKit
 
-/// Detecta cuando el usuario pulsa de nuevo la pestaña ya activa (p. ej. Para ti).
+/// Detecta cuando el usuario pulsa de nuevo una pestaña ya activa.
+/// Debe haber una sola instancia (p. ej. en `MainTabView`) para no pisar `UITabBarController.delegate`.
 struct TabBarReTapDetector: UIViewControllerRepresentable {
-  let selectedIndex: Int
-  let onReTap: () -> Void
+  let onReTap: (Int) -> Void
 
   func makeCoordinator() -> Coordinator {
-    Coordinator(selectedIndex: selectedIndex, onReTap: onReTap)
+    Coordinator(onReTap: onReTap)
   }
 
   func makeUIViewController(context: Context) -> Controller {
@@ -17,7 +17,6 @@ struct TabBarReTapDetector: UIViewControllerRepresentable {
   }
 
   func updateUIViewController(_ uiViewController: Controller, context: Context) {
-    context.coordinator.selectedIndex = selectedIndex
     context.coordinator.onReTap = onReTap
     uiViewController.installIfNeeded()
   }
@@ -27,11 +26,6 @@ struct TabBarReTapDetector: UIViewControllerRepresentable {
 
     override func viewDidAppear(_ animated: Bool) {
       super.viewDidAppear(animated)
-      installIfNeeded()
-    }
-
-    override func viewDidLayoutSubviews() {
-      super.viewDidLayoutSubviews()
       installIfNeeded()
     }
 
@@ -45,19 +39,17 @@ struct TabBarReTapDetector: UIViewControllerRepresentable {
   }
 
   final class Coordinator: NSObject, UITabBarControllerDelegate {
-    var selectedIndex: Int
-    var onReTap: () -> Void
+    var onReTap: (Int) -> Void
     weak var forwardingDelegate: UITabBarControllerDelegate?
 
-    init(selectedIndex: Int, onReTap: @escaping () -> Void) {
-      self.selectedIndex = selectedIndex
+    init(onReTap: @escaping (Int) -> Void) {
       self.onReTap = onReTap
     }
 
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
       let targetIndex = tabBarController.viewControllers?.firstIndex(of: viewController) ?? -1
-      if tabBarController.selectedIndex == selectedIndex, targetIndex == selectedIndex {
-        onReTap()
+      if targetIndex >= 0, tabBarController.selectedIndex == targetIndex {
+        onReTap(targetIndex)
       }
       return forwardingDelegate?.tabBarController?(tabBarController, shouldSelect: viewController) ?? true
     }

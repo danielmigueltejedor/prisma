@@ -6,6 +6,7 @@ struct RootView: View {
   @Query private var preferences: [UserPreference]
 
   @State private var isBootstrapped = false
+  @State private var bootstrapError: String?
   @State private var onboardingViewModel: OnboardingViewModel?
   @AppStorage("prisma.hasCompletedOnboarding") private var onboardingCompletedFallback = false
 
@@ -17,7 +18,15 @@ struct RootView: View {
     Group {
       if !isBootstrapped {
         PrismaScreen {
-          LoadingView(message: String(localized: "app.loading"))
+          if let bootstrapError {
+            ErrorStateView(
+              title: String(localized: "error.generic"),
+              message: bootstrapError,
+              onRetry: { Task { await bootstrap() } }
+            )
+          } else {
+            LoadingView(message: String(localized: "app.loading"))
+          }
         }
       } else if !hasCompletedOnboarding, let onboardingViewModel {
         OnboardingView(viewModel: onboardingViewModel)
@@ -49,11 +58,13 @@ struct RootView: View {
   }
 
   private func bootstrap() async {
+    bootstrapError = nil
     do {
       try await dependencies.bootstrap()
       isBootstrapped = true
     } catch {
-      isBootstrapped = true
+      bootstrapError = error.localizedDescription
+      isBootstrapped = false
     }
   }
 }

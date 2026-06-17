@@ -121,6 +121,7 @@ final class ArticleRepository {
         existing.publishedAt = item.publishedAt ?? existing.publishedAt
         existing.updatedAt = item.updatedAt ?? existing.updatedAt
         existing.imageUrl = Self.resolvedImageURL(item.imageURL) ?? existing.imageUrl
+        existing.videoUrl = Self.resolvedVideoURL(item.videoURL) ?? existing.videoUrl
         existing.categoryNames = item.categories
         existing.contentAvailability = item.contentAvailability
         existing.fetchedAt = .now
@@ -139,6 +140,7 @@ final class ArticleRepository {
           plainSummary: Self.plainSummary(from: item.summary),
           content: item.content,
           imageUrl: Self.resolvedImageURL(item.imageURL),
+          videoUrl: Self.resolvedVideoURL(item.videoURL),
           categoryNames: item.categories,
           readingTimeEstimate: ReadingTimeEstimator.estimate(
             text: item.content ?? item.summary ?? item.title
@@ -172,6 +174,11 @@ final class ArticleRepository {
     return ArticleImageURLResolver.resolve(raw)
   }
 
+  private static func resolvedVideoURL(_ raw: String?) -> String? {
+    guard let raw else { return nil }
+    return ArticleMediaExtractor.resolvePlayableVideoURL(raw)?.absoluteString
+  }
+
   private static func plainSummary(from html: String?) -> String? {
     guard let html else { return nil }
     let text = HTMLSanitizer.stripHTML(html) ?? ""
@@ -180,6 +187,11 @@ final class ArticleRepository {
   }
 
   func save() throws {
+    try context.save()
+  }
+
+  func delete(_ article: Article) throws {
+    context.delete(article)
     try context.save()
   }
 

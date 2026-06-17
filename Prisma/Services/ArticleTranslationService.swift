@@ -96,6 +96,7 @@ final class ArticleTranslationService {
           sourceLanguage: sourceLanguage
         )
         _ = try translationRepository.save(dto)
+        TranslationRefreshNotifier.publish()
         return articleId
       } catch {
         return nil

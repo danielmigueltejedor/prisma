@@ -16,6 +16,8 @@ struct MainTabView: View {
   @State private var selectedAuthor: AuthorProfile?
   @State private var selectedTab = 0
   @State private var readerViewModel: ArticleReaderViewModel?
+  @State private var pendingNavigation: DeferredSheetNavigation?
+  @State private var connectivity = NetworkConnectivityMonitor.shared
 
   init(dependencies: AppDependencies) {
     self.dependencies = dependencies
@@ -25,7 +27,6 @@ struct MainTabView: View {
       feedSourceRepository: dependencies.feedSourceRepository,
       preferenceRepository: dependencies.preferenceRepository,
       searchService: dependencies.searchService,
-      translationService: dependencies.translationService,
       weatherService: dependencies.weatherService
     ))
     _forYouViewModel = State(initialValue: ForYouViewModel(
@@ -49,6 +50,7 @@ struct MainTabView: View {
     _settingsViewModel = State(initialValue: SettingsViewModel(
       preferenceRepository: dependencies.preferenceRepository,
       feedSourceRepository: dependencies.feedSourceRepository,
+      articleRepository: dependencies.articleRepository,
       weatherService: dependencies.weatherService
     ))
   }
@@ -67,7 +69,8 @@ struct MainTabView: View {
         viewModel: forYouViewModel,
         previewStore: dependencies.previewTranslationStore,
         makeReaderViewModel: { makeReaderViewModel(for: $0, cascade: true) },
-        onSelectArticle: { openArticle($0) }
+        onSelectArticle: { openArticle($0) },
+        onOpenSources: { selectedTab = 2 }
       )
       .tabItem { Label(String(localized: "tab.foryou"), systemImage: "sparkles") }
       .tag(1)
@@ -95,6 +98,11 @@ struct MainTabView: View {
         .tabItem { Label(String(localized: "tab.settings"), systemImage: "gearshape") }
         .tag(4)
     }
+    .safeAreaInset(edge: .bottom, spacing: 0) {
+      if !connectivity.isOnline {
+        OfflineBanner()
+      }
+    }
     .onChange(of: selectedTab) { _, tab in
       forYouViewModel.isTabActive = tab == 1
       if tab == 1 {
@@ -103,26 +111,19 @@ struct MainTabView: View {
       if tab == 0 {
         Task { await todayViewModel.loadWeather() }
       }
-      if tab == 3 {
-        savedViewModel.reload()
-      }
     }
     .onChange(of: scenePhase) { _, phase in
       if phase == .background {
         dependencies.offlineReadingCoordinator.schedulePrefetch()
+        dependencies.backgroundTranslationCoordinator.scheduleSweep()
       }
     }
     .task {
       await dependencies.refreshEnabledSourcesOnLaunchIfNeeded()
     }
-    .onAppear {
-      forYouViewModel.isTabActive = selectedTab == 1
-      if selectedTab == 1 {
-        forYouViewModel.tabDidBecomeActive()
-      }
-    }
     .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
       dependencies.offlineReadingCoordinator.schedulePrefetch()
+      dependencies.backgroundTranslationCoordinator.scheduleSweep(priority: .userInitiated)
     }
     .onReceive(NotificationCenter.default.publisher(for: .preferencesDidChange)) { _ in
       dependencies.weatherService.invalidateCache()
@@ -130,34 +131,38 @@ struct MainTabView: View {
     }
     .tint(PrismaColors.accentFallback)
     .sheet(item: $selectedArticle) { article in
-      if let readerViewModel {
-        ArticleReaderView(
-          viewModel: readerViewModel,
-          onSelectArticle: { next in
-            guard next.id != article.id else { return }
-            selectedArticle = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-              openArticle(next)
+      Group {
+        if let readerViewModel {
+          ArticleReaderView(
+            viewModel: readerViewModel,
+            onSelectArticle: { next in
+              guard next.id != article.id else { return }
+              chainNavigation(.article(next)) { selectedArticle = nil }
+            },
+            onOpenSource: { source in
+              chainNavigation(.source(source)) { selectedArticle = nil }
+            },
+            onOpenAuthor: { authorName in
+              chainNavigation(.author(authorName)) { selectedArticle = nil }
             }
-          },
-          onOpenSource: { source in
-            selectedArticle = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-              selectedSource = source
-            }
-          },
-          onOpenAuthor: { authorName in
-            selectedArticle = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-              selectedAuthor = AuthorProfile(name: authorName)
-            }
+          )
+        } else {
+          PrismaScreen {
+            LoadingView(message: String(localized: "app.loading"))
           }
-        )
+        }
+      }
+      .task(id: article.id) {
+        guard readerViewModel?.article.id != article.id else { return }
+        await Task.yield()
+        guard selectedArticle?.id == article.id else { return }
+        readerViewModel = makeReaderViewModel(for: article)
       }
     }
     .onChange(of: selectedArticle) { _, newValue in
       if newValue == nil {
         readerViewModel = nil
+        resumePendingNavigation()
       }
     }
     .sheet(item: $selectedAuthor) { author in
@@ -170,12 +175,14 @@ struct MainTabView: View {
         ),
         previewStore: dependencies.previewTranslationStore,
         onSelectArticle: { article in
-          selectedAuthor = nil
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            openArticle(article)
-          }
+          chainNavigation(.article(article)) { selectedAuthor = nil }
         }
       )
+    }
+    .onChange(of: selectedAuthor) { _, newValue in
+      if newValue == nil {
+        resumePendingNavigation()
+      }
     }
     .sheet(item: $selectedSource) { source in
         SourceDetailView(
@@ -187,21 +194,58 @@ struct MainTabView: View {
           ),
           previewStore: dependencies.previewTranslationStore,
         onSelectArticle: { article in
-          selectedSource = nil
-          DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            openArticle(article)
-          }
+          chainNavigation(.article(article)) { selectedSource = nil }
         }
       )
+    }
+    .onChange(of: selectedSource) { _, newValue in
+      if newValue == nil {
+        resumePendingNavigation()
+      }
+    }
+    .background {
+      TabBarReTapDetector { tabIndex in
+        handleTabReTap(tabIndex)
+      }
+    }
+  }
+
+  private func handleTabReTap(_ tabIndex: Int) {
+    switch tabIndex {
+    case 0:
+      todayViewModel.refreshFromTabReTap()
+    case 1:
+      forYouViewModel.refreshFromTabReTap()
+    default:
+      break
+    }
+  }
+
+  private func chainNavigation(_ next: DeferredSheetNavigation, dismiss: () -> Void) {
+    pendingNavigation = next
+    dismiss()
+  }
+
+  private func resumePendingNavigation() {
+    guard let pending = pendingNavigation else { return }
+    pendingNavigation = nil
+    switch pending {
+    case .article(let article):
+      openArticle(article)
+    case .source(let source):
+      selectedSource = source
+    case .author(let name):
+      selectedAuthor = AuthorProfile(name: name)
     }
   }
 
   private func openArticle(_ article: Article) {
-    if readerViewModel?.article.id != article.id {
-      readerViewModel = makeReaderViewModel(for: article)
-    } else {
+    if readerViewModel?.article.id == article.id {
       readerViewModel?.syncLibraryState()
+      selectedArticle = article
+      return
     }
+    readerViewModel = nil
     selectedArticle = article
   }
 

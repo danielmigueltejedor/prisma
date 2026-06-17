@@ -62,7 +62,7 @@ struct SavedView: View {
         Button(String(localized: "action.cancel"), role: .cancel) {}
       }
       .onAppear {
-        viewModel.reload()
+        viewModel.loadIfNeeded()
         previewStore.refresh(for: viewModel.displayedArticles)
       }
       .onChange(of: viewModel.selectedFilter) { _, _ in
@@ -81,8 +81,19 @@ struct SavedView: View {
         .font(PrismaTypography.headline())
       ScrollView(.horizontal, showsIndicators: false) {
         HStack {
+          CategoryChip(
+            title: String(localized: "saved.collections.all"),
+            isSelected: viewModel.selectedCollectionID == nil
+          ) {
+            viewModel.selectedCollectionID = nil
+          }
           ForEach(viewModel.collections, id: \.id) { collection in
-            CategoryChip(title: collection.name)
+            CategoryChip(
+              title: collection.name,
+              isSelected: viewModel.selectedCollectionID == collection.id
+            ) {
+              viewModel.selectedCollectionID = collection.id
+            }
           }
         }
       }
