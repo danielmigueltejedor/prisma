@@ -7,6 +7,7 @@ struct ForYouView: View {
   var onSelectArticle: (Article) -> Void
 
   @State private var selectedCluster: ClusterDTO?
+  @State private var lastPreviewArticleIDs: [String] = []
 
   var body: some View {
     NavigationStack {

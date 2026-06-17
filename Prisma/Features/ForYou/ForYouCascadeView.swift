@@ -66,6 +66,9 @@ struct ForYouCascadeView: View {
             viewModel.preloadCascadeReaders(around: first, factory: makeReaderViewModel)
           }
         }
+        .onChange(of: viewModel.cascadeFeedRefreshToken) { _, _ in
+          jumpToFreshCascadeHead()
+        }
       }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -81,6 +84,18 @@ struct ForYouCascadeView: View {
         scrollPosition = articles.first?.id
       }
     }
+  }
+
+  private func jumpToFreshCascadeHead() {
+    guard let first = articles.first?.id else {
+      scrollPosition = nil
+      visibleArticleID = nil
+      return
+    }
+    scrollPosition = first
+    visibleArticleID = first
+    viewModel.beginCascadePage(articleID: first)
+    viewModel.preloadCascadeReaders(around: first, factory: makeReaderViewModel)
   }
 
   private var cascadeHeaderBar: some View {
