@@ -17,6 +17,7 @@ enum HTMLSanitizer {
       options: .regularExpression
     )
     result = decodeEntities(result)
+    result = cleanArtifacts(in: result)
     result = result.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
     return result.trimmingCharacters(in: .whitespacesAndNewlines)
   }
@@ -58,7 +59,9 @@ enum HTMLSanitizer {
       options: [.regularExpression, .caseInsensitive]
     )
 
-    return decodeEntities(output).trimmingCharacters(in: .whitespacesAndNewlines)
+    output = decodeEntities(output)
+    output = cleanArtifacts(in: output)
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   static func attributedString(from html: String?) -> AttributedString? {
@@ -94,28 +97,29 @@ enum HTMLSanitizer {
   static func readerDocument(
     from html: String?,
     colorScheme: ColorScheme,
-    readerMode: Bool = false,
-    fontSizeMultiplier: Double = 1.0
+    fontFamily: ReaderFontFamily = .serif,
+    fontSizeMultiplier: Double = 1.0,
+    suppressInlineImages: Bool = false
   ) -> String {
-    let sanitized = readerMode
-      ? (sanitizeForReaderMode(html) ?? sanitizeForReader(html) ?? "")
+    let sanitized = suppressInlineImages
+      ? (stripImageTags(from: sanitizeForReader(html)) ?? "")
       : (sanitizeForReader(html) ?? "")
 
     let textColor = colorScheme == .dark ? "#F2F2F7" : "#1C1C1E"
     let secondary = colorScheme == .dark ? "#AEAEB2" : "#636366"
     let link = colorScheme == .dark ? "#64D2FF" : "#007AFF"
-    let baseSize = readerMode ? 20.0 : 18.0
-    let fontSize = baseSize * fontSizeMultiplier
-    let lineHeight = readerMode ? 1.75 : 1.65
-    let maxWidth = readerMode ? "42rem" : "100%"
-    let fontFamily = readerMode
-      ? "Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, serif"
-      : "-apple-system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+    let fontSize = 18.0 * fontSizeMultiplier
+    let lineHeight = 1.7
+    let maxWidth = "42rem"
 
     let css = """
-    html { background: transparent; }
+    html, body {
+      background: transparent;
+      overflow: visible;
+      min-height: auto;
+    }
     body {
-      font-family: \(fontFamily);
+      font-family: \(fontFamily.cssStack);
       font-size: \(fontSize)px;
       line-height: \(lineHeight);
       color: \(textColor);
@@ -134,7 +138,13 @@ enum HTMLSanitizer {
     }
     h1 { font-size: 1.35em; }
     h2 { font-size: 1.2em; }
-    img, figure { max-width: 100%; height: auto; border-radius: 12px; margin: 1em 0; display: block; }
+    img, figure {
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      margin: 1em 0;
+      display: \(suppressInlineImages ? "none" : "block");
+    }
     figcaption { font-size: 0.85em; color: \(secondary); margin-top: 0.4em; }
     a { color: \(link); text-decoration: none; }
     blockquote {
@@ -152,7 +162,13 @@ enum HTMLSanitizer {
       border-radius: 6px;
     }
     pre { padding: 12px; overflow-x: auto; }
-    .prisma-hidden { display: none !important; }
+    [hidden], .hidden, .prisma-hidden, [style*="display:none"], [style*="display: none"] {
+      display: none !important;
+      max-height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
     """
     return """
     <!DOCTYPE html>
@@ -199,7 +215,22 @@ enum HTMLSanitizer {
       options: [.regularExpression, .caseInsensitive]
     )
 
-    return decodeEntities(output).trimmingCharacters(in: .whitespacesAndNewlines)
+    // Drop media tags with empty or unsafe sources to avoid broken placeholders.
+    output = output.replacingOccurrences(
+      of: "<img\\b(?:(?!\\bsrc\\s*=)[^>])*?>",
+      with: "",
+      options: [.regularExpression, .caseInsensitive]
+    )
+    output = output.replacingOccurrences(
+      of: "<img[^>]*src\\s*=\\s*\"\\s*(?:javascript:|data:|about:blank)[^\"]*\"[^>]*>",
+      with: "",
+      options: [.regularExpression, .caseInsensitive]
+    )
+    output = cleanArtifacts(in: output)
+
+    output = decodeEntities(output)
+    output = cleanArtifacts(in: output)
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// Aggressive cleanup for distraction-free reading (Safari Reader–style).
@@ -218,6 +249,18 @@ enum HTMLSanitizer {
         options: [.regularExpression, .caseInsensitive]
       )
     }
+
+    // Reader mode prioritizes clean text flow over media rendering.
+    output = output.replacingOccurrences(
+      of: "<(img|figure|figcaption)[^>]*>[\\s\\S]*?</\\1>",
+      with: "",
+      options: [.regularExpression, .caseInsensitive]
+    )
+    output = output.replacingOccurrences(
+      of: "<(img|figure|figcaption)\\b[^>]*>",
+      with: "",
+      options: [.regularExpression, .caseInsensitive]
+    )
 
     output = stripAttributes(from: output, keeping: ["href", "src", "alt"])
     output = collapseEmptyTags(output)
@@ -259,6 +302,22 @@ enum HTMLSanitizer {
     return result
   }
 
+  private static func stripImageTags(from html: String?) -> String? {
+    guard let html else { return nil }
+    var output = html
+    output = output.replacingOccurrences(
+      of: "<figure[^>]*>[\\s\\S]*?</figure>",
+      with: "",
+      options: [.regularExpression, .caseInsensitive]
+    )
+    output = output.replacingOccurrences(
+      of: "<img\\b[^>]*>",
+      with: "",
+      options: [.regularExpression, .caseInsensitive]
+    )
+    return output.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
+
   private static func collapseEmptyTags(_ html: String) -> String {
     var result = html
     let emptyPatterns = [
@@ -286,6 +345,15 @@ enum HTMLSanitizer {
     for (entity, char) in entities {
       result = result.replacingOccurrences(of: entity, with: char)
     }
+    return result
+  }
+
+  private static func cleanArtifacts(in text: String) -> String {
+    var result = text
+    // Unicode placeholders commonly seen in malformed RSS content.
+    result = result.replacingOccurrences(of: "\u{FFFD}", with: "")
+    result = result.replacingOccurrences(of: "\u{FFFC}", with: "")
+    result = result.replacingOccurrences(of: "❓", with: "")
     return result
   }
 }

@@ -20,10 +20,7 @@ struct RootView: View {
           LoadingView(message: String(localized: "app.loading"))
         }
       } else if !hasCompletedOnboarding, let onboardingViewModel {
-        OnboardingView(
-          viewModel: onboardingViewModel,
-          subscriptionService: dependencies.subscriptionService
-        )
+        OnboardingView(viewModel: onboardingViewModel)
       } else if !hasCompletedOnboarding {
         PrismaScreen {
           LoadingView(message: String(localized: "app.loading"))

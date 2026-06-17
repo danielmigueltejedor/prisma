@@ -1,152 +1,181 @@
 import SwiftUI
-import SafariServices
 
 struct ArticleReaderView: View {
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.openURL) private var openURL
   @Bindable var viewModel: ArticleReaderViewModel
-  var onShowPaywall: () -> Void
   var onSelectArticle: ((Article) -> Void)?
+  var onOpenSource: ((FeedSource) -> Void)?
+  var onOpenAuthor: ((String) -> Void)?
 
-  @State private var showSafari = false
-  @State private var safariURL: URL?
-  @State private var showSimilarBar = false
-  @State private var readerMode = true
+  @State private var showSimilarBar = true
+  @State private var showImageGallery = false
+  @State private var galleryIndex = 0
+  @State private var showShare = false
+  @ObservedObject private var speechReader = ArticleSpeechReader.shared
 
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: PrismaSpacing.lg) {
+        VStack(alignment: .leading, spacing: PrismaSpacing.md) {
           header
-          if let imageURL = viewModel.article.imageUrl.flatMap(URL.init(string:)) {
-            AsyncImage(url: imageURL) { phase in
-              if case .success(let image) = phase {
-                image
-                  .resizable()
-                  .aspectRatio(contentMode: .fill)
-                  .frame(maxHeight: 220)
-                  .clipShape(RoundedRectangle(cornerRadius: PrismaRadius.lg, style: .continuous))
-              }
+
+          if viewModel.needsTranslation {
+            translationBanner
+          }
+
+          if !viewModel.imageURLs.isEmpty {
+            ArticleImageCarousel(imageURLs: viewModel.imageURLs) { index in
+              galleryIndex = index
+              showImageGallery = true
             }
           }
 
-          articleBody
+          if viewModel.showsNativeLiveTimeline {
+            LiveTimelineView(
+              entries: viewModel.liveEntries,
+              isRefreshing: viewModel.isRefreshingLive,
+              lastUpdated: viewModel.liveLastUpdated,
+              onRefresh: {
+                Task { await viewModel.refreshLiveTimeline() }
+              }
+            )
+          }
+
+          if !viewModel.showsNativeLiveTimeline || viewModel.liveEntries.count < 2 {
+            articleBody
+          }
 
           if viewModel.needsPartialNotice {
             partialNoticeBanner
           }
 
-          plusActions
+          if viewModel.isRedditPost {
+            RedditCommentsSection(
+              comments: viewModel.redditComments,
+              isLoading: viewModel.isLoadingRedditComments,
+              errorMessage: viewModel.redditCommentsError
+            )
+            .onAppear {
+              viewModel.scheduleRedditCommentsIfNeeded()
+            }
+          }
 
-          if let summary = viewModel.aiSummary {
+          aiActions
+            .padding(.top, PrismaSpacing.xxs)
+
+          if let summary = viewModel.aiSummary, viewModel.showingSummary {
             aiResultCard(title: String(localized: "reader.aiSummary"), text: summary)
           }
-          if let comparison = viewModel.comparisonText {
-            aiResultCard(title: String(localized: "reader.compare"), text: comparison)
-          }
-          if let context = viewModel.contextExplanation {
+          if let context = viewModel.contextExplanation, viewModel.showingContext {
             aiResultCard(title: String(localized: "reader.context"), text: context)
-          }
-
-          if !viewModel.similarArticles.isEmpty {
-            SimilarArticlesSection(articles: viewModel.similarArticles) { article in
-              onSelectArticle?(article)
-            }
-            .onAppear { showSimilarBar = true }
-            .onDisappear { showSimilarBar = false }
           }
 
           attributionFooter
         }
         .padding(PrismaSpacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(
+          .bottom,
+          showSimilarBar && !viewModel.similarArticles.isEmpty ? PrismaSpacing.md : 0
+        )
+        .frame(maxWidth: 720)
+        .frame(maxWidth: .infinity)
       }
       .background { GlassBackground() }
-      .overlay {
-        if viewModel.isLoadingAI {
-          Color.black.opacity(0.15).ignoresSafeArea()
-          ProgressView()
-            .padding()
-            .prismaGlass()
-        }
+      .safeAreaInset(edge: .top, spacing: 0) {
+        readerTopBar
       }
+      .toolbar(.hidden, for: .navigationBar)
       .safeAreaInset(edge: .bottom) {
         if showSimilarBar, !viewModel.similarArticles.isEmpty {
           SimilarArticlesSection(
             articles: viewModel.similarArticles,
             onSelect: { onSelectArticle?($0) },
-            compact: true
+            compact: true,
+            poweredByAI: viewModel.similarArticlesPoweredByAI,
+            isLoadingAI: viewModel.isLoadingAISimilarArticles
           )
           .padding(.horizontal, PrismaSpacing.md)
-          .padding(.vertical, PrismaSpacing.sm)
+          .padding(.top, PrismaSpacing.xs)
+          .padding(.bottom, PrismaSpacing.xxs)
           .background(.ultraThinMaterial)
         }
       }
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .topBarLeading) {
-          Button { dismiss() } label: {
-            Image(systemName: "xmark.circle.fill")
-              .symbolRenderingMode(.hierarchical)
-          }
-        }
-        ToolbarItemGroup(placement: .topBarTrailing) {
-          if viewModel.hasReadableInAppContent {
-            Button {
-              readerMode.toggle()
-            } label: {
-              Label(
-                readerMode
-                  ? String(localized: "reader.readingModeOn")
-                  : String(localized: "reader.readingModeOff"),
-                systemImage: readerMode ? "text.book.closed.fill" : "text.book.closed"
-              )
-              .labelStyle(.iconOnly)
-            }
-            .accessibilityLabel(
-              readerMode
-                ? String(localized: "reader.readingModeOn")
-                : String(localized: "reader.readingModeOff")
-            )
-          }
-          Button { viewModel.toggleSaved() } label: {
-            Image(systemName: viewModel.article.isSaved ? "bookmark.fill" : "bookmark")
-          }
-          Button { viewModel.toggleFavorite() } label: {
-            Image(systemName: viewModel.article.isFavorite ? "heart.fill" : "heart")
-          }
-        }
-      }
       .onAppear { viewModel.onAppear() }
-      .sheet(isPresented: $showSafari) {
-        if let safariURL {
-          SafariView(url: safariURL)
+      .onDisappear { viewModel.onDisappear() }
+      .fullScreenCover(isPresented: $showImageGallery) {
+        ArticleImageGalleryView(
+          imageURLs: viewModel.imageURLs,
+          selectedIndex: $galleryIndex
+        )
+      }
+      .sheet(isPresented: $showShare) {
+        ShareSheet(items: shareItems)
+      }
+    }
+  }
+
+  private var readerTopBar: some View {
+    HStack(spacing: PrismaSpacing.sm) {
+      PrismaDismissButton { dismiss() }
+
+      Spacer()
+
+      LiquidGlassToolbarGroup {
+        if viewModel.hasReadableInAppContent {
+          ReaderTypographyMenu(viewModel: viewModel)
+        }
+        ReaderToolbarIconButton(
+          systemName: speechReader.isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.2",
+          isActive: speechReader.isSpeaking,
+          accessibilityLabel: String(localized: "action.readAloud")
+        ) {
+          toggleSpeech()
+        }
+        ReaderToolbarIconButton(
+          systemName: "square.and.arrow.up",
+          accessibilityLabel: String(localized: "action.share")
+        ) {
+          showShare = true
+        }
+        ReaderToolbarIconButton(
+          systemName: viewModel.isSaved ? "bookmark.fill" : "bookmark",
+          isActive: viewModel.isSaved,
+          accessibilityLabel: String(localized: "action.save")
+        ) {
+          viewModel.toggleSaved()
+        }
+        ReaderToolbarIconButton(
+          systemName: viewModel.isFavorite ? "heart.fill" : "heart",
+          isActive: viewModel.isFavorite,
+          accessibilityLabel: String(localized: "action.favorite")
+        ) {
+          viewModel.toggleFavorite()
         }
       }
     }
+    .padding(.horizontal, PrismaSpacing.md)
+    .padding(.top, PrismaSpacing.xs)
+    .padding(.bottom, PrismaSpacing.xs)
   }
 
   @ViewBuilder
   private var articleBody: some View {
     if let html = viewModel.bodyHTML, viewModel.hasReadableInAppContent {
-      VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
-        if readerMode {
-          HStack(spacing: PrismaSpacing.xs) {
-            Image(systemName: "text.book.closed.fill")
-              .foregroundStyle(PrismaColors.accentFallback)
-            Text(String(localized: "reader.readingModeActive"))
-              .font(PrismaTypography.caption(.semibold))
-              .foregroundStyle(PrismaColors.textSecondary)
-          }
-        }
-        ArticleHTMLView(
-          html: html,
-          readerMode: readerMode,
-          fontSizeMultiplier: viewModel.fontSizeMultiplier
-        )
-      }
+      ArticleHTMLView(
+        html: html,
+        baseURL: normalizedArticleURL(),
+        fontFamily: viewModel.readerFontFamily,
+        fontSizeMultiplier: viewModel.readerFontSizeMultiplier,
+        suppressInlineImages: !viewModel.imageURLs.isEmpty,
+        onOpenExternalURL: { url in openURL(url) }
+      )
     } else if let plain = viewModel.plainBodyText {
       Text(plain)
-        .font(PrismaTypography.readerBody())
+        .font(PrismaTypography.readerBody(
+          sizeMultiplier: viewModel.readerFontSizeMultiplier,
+          family: viewModel.readerFontFamily
+        ))
         .foregroundStyle(PrismaColors.textPrimary)
         .frame(maxWidth: .infinity, alignment: .leading)
     } else {
@@ -163,25 +192,54 @@ struct ArticleReaderView: View {
 
   private var header: some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
-      Text(viewModel.article.title)
+      if viewModel.isLiveCoverage {
+        LiveCoverageDot()
+      }
+
+      Text(viewModel.displayTitle)
         .font(PrismaTypography.readerTitle())
         .foregroundStyle(PrismaColors.textPrimary)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.displayTitle)
 
       HStack(spacing: PrismaSpacing.xs) {
-        SourceIconView(
-          siteURL: viewModel.article.feedSource?.siteURL,
-          feedURL: viewModel.article.originalFeedUrl,
-          size: 20
-        )
-        Text(viewModel.article.sourceName)
-          .font(PrismaTypography.callout(.semibold))
-          .foregroundStyle(PrismaColors.accentFallback)
+        if let source = viewModel.resolvedSource {
+          Button {
+            onOpenSource?(source)
+          } label: {
+            HStack(spacing: PrismaSpacing.xs) {
+              SourceIconView(
+                siteURL: source.siteURL,
+                feedURL: source.feedURL,
+                platform: source.effectivePlatform,
+                size: 20
+              )
+              Text(source.name)
+                .font(PrismaTypography.callout(.semibold))
+                .foregroundStyle(PrismaColors.accentFallback)
+            }
+          }
+          .buttonStyle(.plain)
+        } else {
+          SourceIconView(
+            siteURL: viewModel.article.feedSource?.siteURL,
+            feedURL: viewModel.article.originalFeedUrl,
+            size: 20
+          )
+          Text(viewModel.article.sourceName)
+            .font(PrismaTypography.callout(.semibold))
+            .foregroundStyle(PrismaColors.accentFallback)
+        }
 
         if let author = viewModel.article.authorName {
           Text("·")
-          Text(author)
-            .font(PrismaTypography.callout())
-            .foregroundStyle(PrismaColors.textSecondary)
+          Button {
+            onOpenAuthor?(author)
+          } label: {
+            Text(author)
+              .font(PrismaTypography.callout(.semibold))
+              .foregroundStyle(PrismaColors.accentFallback)
+          }
+          .buttonStyle(.plain)
         }
 
         if let date = viewModel.article.publishedAt {
@@ -194,6 +252,44 @@ struct ArticleReaderView: View {
     }
   }
 
+  private var translationBanner: some View {
+    HStack(spacing: PrismaSpacing.sm) {
+      if viewModel.isTranslating {
+        ProgressView()
+          .controlSize(.small)
+        Text(String(localized: "reader.translating"))
+          .font(PrismaTypography.caption())
+          .foregroundStyle(PrismaColors.textSecondary)
+      } else if viewModel.hasTranslation {
+        Image(systemName: "character.book.closed")
+          .foregroundStyle(PrismaColors.accentFallback)
+        Text(String(localized: "reader.translatedTo \(viewModel.targetLanguageName)"))
+          .font(PrismaTypography.caption())
+          .foregroundStyle(PrismaColors.textSecondary)
+        Spacer()
+        Button(viewModel.isShowingTranslation
+          ? String(localized: "reader.viewOriginal")
+          : String(localized: "reader.viewTranslation")) {
+          viewModel.toggleTranslationView()
+        }
+        .font(PrismaTypography.caption(.semibold))
+      } else {
+        Image(systemName: "character.book.closed")
+          .foregroundStyle(PrismaColors.textTertiary)
+        Text(String(localized: "reader.translationPending"))
+          .font(PrismaTypography.caption())
+          .foregroundStyle(PrismaColors.textTertiary)
+        Spacer()
+        Button(String(localized: "reader.viewTranslation")) {
+          Task { await viewModel.prepareTranslation() }
+        }
+        .font(PrismaTypography.caption(.semibold))
+      }
+    }
+    .padding(PrismaSpacing.sm)
+    .prismaGlass(cornerRadius: PrismaRadius.md)
+  }
+
   private var partialNoticeBanner: some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
       Text(String(localized: "reader.partialNotice"))
@@ -204,73 +300,154 @@ struct ArticleReaderView: View {
     .prismaGlass()
   }
 
-  private var plusActions: some View {
+  private var aiActions: some View {
     VStack(spacing: PrismaSpacing.sm) {
-      plusButton(
-        title: String(localized: "reader.aiSummary"),
-        icon: "sparkles"
-      ) {
-        await handlePlus { await viewModel.performPlusAction(.summary) }
-      }
-
-      if viewModel.canCompareSources {
-        plusButton(
-          title: String(localized: "reader.compare"),
-          icon: "arrow.left.arrow.right"
+      if viewModel.hasSummaryAvailable {
+        aiToggleButton(
+          title: viewModel.showingSummary
+            ? String(localized: "reader.hideSummary")
+            : String(localized: "reader.showSummary"),
+          icon: "sparkles",
+          isActive: viewModel.showingSummary
         ) {
-          await handlePlus { await viewModel.performPlusAction(.compare) }
+          viewModel.showingSummary.toggle()
         }
+      } else if viewModel.shouldShowSummaryPreparing {
+        aiStatusRow(
+          icon: "sparkles",
+          text: String(localized: "reader.summaryPreparing")
+        )
       }
 
-      plusButton(
-        title: String(localized: "reader.context"),
-        icon: "info.circle"
-      ) {
-        await handlePlus { await viewModel.performPlusAction(.context) }
+      if viewModel.hasComparisonAvailable {
+        aiToggleButton(
+          title: viewModel.showingComparison
+            ? String(localized: "reader.hideComparison")
+            : String(localized: "reader.showComparison"),
+          icon: "arrow.left.arrow.right",
+          isActive: viewModel.showingComparison
+        ) {
+          viewModel.showingComparison.toggle()
+        }
+
+        if viewModel.showingComparison {
+          if !viewModel.verifiedSameStoryArticles.isEmpty {
+            SimilarArticlesSection(
+              articles: viewModel.verifiedSameStoryArticles,
+              onSelect: { article in onSelectArticle?(article) },
+              compact: true,
+              poweredByAI: true
+            )
+          }
+
+          if let unified = viewModel.unifiedStory, !unified.isEmpty {
+            aiResultCard(title: String(localized: "reader.unifiedStory"), text: unified)
+          }
+
+          if let comparison = viewModel.comparisonText {
+            aiResultCard(title: String(localized: "reader.compare"), text: comparison)
+          }
+        }
+      } else if viewModel.isGeneratingComparison {
+        aiStatusRow(
+          icon: "arrow.left.arrow.right",
+          text: String(localized: "reader.comparisonSearching")
+        )
+      }
+
+      if viewModel.hasContextAvailable {
+        aiToggleButton(
+          title: viewModel.showingContext
+            ? String(localized: "reader.hideContext")
+            : String(localized: "reader.showContext"),
+          icon: "info.circle",
+          isActive: viewModel.showingContext
+        ) {
+          viewModel.showingContext.toggle()
+        }
+      } else if viewModel.isGeneratingContext {
+        aiStatusRow(
+          icon: "info.circle",
+          text: String(localized: "reader.contextPreparing")
+        )
+      }
+
+      if !viewModel.canUseAI {
+        aiUnavailableHint
+      } else {
+        Text(String(localized: "reader.aiDisclaimer"))
+          .font(PrismaTypography.caption2())
+          .foregroundStyle(PrismaColors.textTertiary)
+          .frame(maxWidth: .infinity, alignment: .leading)
       }
     }
   }
 
-  private func plusButton(
+  private func aiToggleButton(
     title: String,
     icon: String,
-    action: @escaping () async -> Void
+    isActive: Bool,
+    action: @escaping () -> Void
   ) -> some View {
-    Button {
-      Task { await action() }
-    } label: {
+    Button(action: action) {
       HStack {
         Image(systemName: icon)
         Text(title)
         Spacer()
-        if !viewModel.canUseAI {
-          PrismaPlusBadge()
+        if isActive {
+          Image(systemName: "checkmark.circle.fill")
+            .foregroundStyle(PrismaColors.accentFallback)
         }
       }
       .font(PrismaTypography.callout(.medium))
       .padding(PrismaSpacing.md)
       .prismaGlass(cornerRadius: PrismaRadius.md)
+      .opacity(viewModel.canUseAI ? 1 : 0.55)
     }
     .buttonStyle(.plain)
+    .disabled(!viewModel.canUseAI)
   }
 
-  private func handlePlus(action: () async -> Bool) async {
-    if viewModel.canUseAI {
-      _ = await action()
-    } else {
-      onShowPaywall()
+  private func aiStatusRow(icon: String, text: String) -> some View {
+    HStack(spacing: PrismaSpacing.sm) {
+      ProgressView()
+        .controlSize(.small)
+      Image(systemName: icon)
+        .foregroundStyle(PrismaColors.textTertiary)
+      Text(text)
+        .font(PrismaTypography.caption())
+        .foregroundStyle(PrismaColors.textSecondary)
+      Spacer()
     }
+    .padding(PrismaSpacing.md)
+    .prismaGlass(cornerRadius: PrismaRadius.md)
+  }
+
+  private var aiUnavailableHint: some View {
+    HStack(spacing: PrismaSpacing.xs) {
+      Image(systemName: "apple.intelligence")
+        .foregroundStyle(PrismaColors.textTertiary)
+      Text(aiUnavailableMessage)
+        .font(PrismaTypography.caption())
+        .foregroundStyle(PrismaColors.textSecondary)
+    }
+    .padding(PrismaSpacing.sm)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .prismaGlass(cornerRadius: PrismaRadius.md)
+  }
+
+  private var aiUnavailableMessage: String {
+    if let key = AppleIntelligenceAvailability.current.userMessageKey {
+      return String(localized: String.LocalizationValue(key))
+    }
+    return String(localized: "ai.unavailable.body")
   }
 
   private func aiResultCard(title: String, text: String) -> some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
       HStack {
-        if viewModel.isPlusActive {
-          PrismaPlusBadge()
-        } else if viewModel.hasFreeOnDeviceAI {
-          Image(systemName: "apple.intelligence")
-            .foregroundStyle(PrismaColors.accentFallback)
-        }
+        Image(systemName: "sparkles")
+          .foregroundStyle(PrismaColors.accentFallback)
         Text(title)
           .font(PrismaTypography.headline())
       }
@@ -296,23 +473,23 @@ struct ArticleReaderView: View {
   }
 
   private func openInBrowser() {
-    let raw = viewModel.article.url.trimmingCharacters(in: .whitespacesAndNewlines)
-    let normalized = (raw.removingPercentEncoding ?? raw).replacingOccurrences(of: "&amp;", with: "&")
-    let candidate = normalized.contains("://") ? normalized : "https://\(normalized)"
-    let encoded = candidate.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? candidate
-    guard let url = URL(string: encoded)
-    else { return }
-    safariURL = url
-    showSafari = true
-  }
-}
-
-struct SafariView: UIViewControllerRepresentable {
-  let url: URL
-
-  func makeUIViewController(context: Context) -> SFSafariViewController {
-    SFSafariViewController(url: url)
+    guard let url = normalizedArticleURL() else { return }
+    openURL(url)
   }
 
-  func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+  private func normalizedArticleURL() -> URL? {
+    SafeURL.httpURL(from: viewModel.article.url)
+  }
+
+  private var shareItems: [Any] {
+    var items: [Any] = [viewModel.displayTitle]
+    if let url = normalizedArticleURL() {
+      items.append(url)
+    }
+    return items
+  }
+
+  private func toggleSpeech() {
+    speechReader.toggleSpeech(for: ArticleSpeechContent(article: viewModel.article))
+  }
 }

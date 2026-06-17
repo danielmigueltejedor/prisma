@@ -15,6 +15,8 @@ final class FeedSource {
   var lastFetchedAt: Date?
   var sortOrder: Int
   var countryCode: String?
+  var feedDescription: String?
+  var platformRaw: String
 
   @Relationship(deleteRule: .cascade, inverse: \Article.feedSource)
   var articles: [Article] = []
@@ -31,7 +33,9 @@ final class FeedSource {
     createdAt: Date = .now,
     lastFetchedAt: Date? = nil,
     sortOrder: Int = 0,
-    countryCode: String? = nil
+    countryCode: String? = nil,
+    feedDescription: String? = nil,
+    platform: FeedPlatform = .news
   ) {
     self.id = id
     self.name = name
@@ -45,5 +49,12 @@ final class FeedSource {
     self.lastFetchedAt = lastFetchedAt
     self.sortOrder = sortOrder
     self.countryCode = countryCode
+    self.feedDescription = feedDescription
+    self.platformRaw = platform.rawValue
+  }
+
+  var platform: FeedPlatform {
+    get { FeedPlatform(rawValue: platformRaw) ?? .news }
+    set { platformRaw = newValue.rawValue }
   }
 }

@@ -51,3 +51,8 @@ struct ContextExplanationDTO: Codable, Sendable {
   let articleId: String
   let explanation: String
 }
+
+struct SameStoryComparisonDTO: Codable, Sendable {
+  let comparisonText: String
+  let unifiedStory: String
+}

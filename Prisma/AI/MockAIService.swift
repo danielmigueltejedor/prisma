@@ -8,11 +8,11 @@ struct MockAIService: AIService {
     let body = HTMLSanitizer.stripHTML(article.content ?? article.summary) ?? article.title
     let excerpt = String(body.prefix(280))
     let summary = """
-    Resumen Prisma+ (demo): \(article.title)
+    Resumen (demo): \(article.title)
 
     \(excerpt)
 
-    Publicado por \(article.sourceName). Con el backend conectado, Prisma+ sintetiza el contenido completo del feed y lo compara con otras fuentes.
+    Publicado por \(article.sourceName). En dispositivos compatibles, Apple Intelligence sintetiza el contenido del feed y lo compara con otras fuentes, todo en tu iPhone.
     """
     return SummaryDTO(
       articleId: article.id,
@@ -67,7 +67,7 @@ struct MockAIService: AIService {
       return "Se necesitan al menos dos fuentes distintas para comparar enfoques."
     }
 
-    var lines = ["Comparación Prisma+ (demo):", ""]
+    var lines = ["Comparación de fuentes (demo):", ""]
     for article in matched.prefix(4) {
       let excerpt = HTMLSanitizer.stripHTML(article.summary ?? article.content) ?? article.title
       lines.append("• \(article.sourceName): \(article.title)")
@@ -76,6 +76,61 @@ struct MockAIService: AIService {
     }
     lines.append("Las fuentes \(sources.joined(separator: ", ")) cubren «\(cluster.title)» con matices distintos de tono y énfasis.")
     return lines.joined(separator: "\n")
+  }
+
+  func filterSameStoryArticleIDs(anchor: Article, candidates: [Article]) async throws -> [String] {
+    try await Task.sleep(for: simulatedDelay)
+    let validIDs = Set(candidates.map(\.id))
+    return candidates
+      .filter { candidate in
+        ArticleTopicMatcher.sameStorySimilarity(between: anchor, and: candidate) >= 48
+      }
+      .map(\.id)
+      .filter { validIDs.contains($0) }
+  }
+
+  func compareSameStory(anchor: Article, relatedArticles: [Article]) async throws -> SameStoryComparisonDTO {
+    try await Task.sleep(for: simulatedDelay)
+    guard !relatedArticles.isEmpty else {
+      return SameStoryComparisonDTO(
+        comparisonText: "No se encontraron otras fuentes sobre la misma noticia.",
+        unifiedStory: ""
+      )
+    }
+
+    var lines = [
+      "HECHOS COMPARTIDOS:",
+      "Varias fuentes cubren «\(anchor.title)» con el mismo hilo narrativo.",
+      "",
+      "DIFERENCIAS POR FUENTE:",
+    ]
+    lines.append("• \(anchor.sourceName): \(String((HTMLSanitizer.stripHTML(anchor.summary) ?? anchor.title).prefix(140)))…")
+    for article in relatedArticles.prefix(3) {
+      let excerpt = HTMLSanitizer.stripHTML(article.summary ?? article.content) ?? article.title
+      lines.append("• \(article.sourceName): \(String(excerpt.prefix(140)))…")
+    }
+    lines.append("")
+    lines.append("LECTURA RÁPIDA: contrasta \(anchor.sourceName) con \(relatedArticles.first?.sourceName ?? "otras fuentes") para ver matices y omisiones.")
+
+    let comparisonText = lines.joined(separator: "\n")
+    let unifiedBody = ([anchor] + relatedArticles.prefix(3))
+      .map { article in
+        let excerpt = HTMLSanitizer.stripHTML(article.summary ?? article.content) ?? article.title
+        return "\(article.sourceName): \(String(excerpt.prefix(220)))"
+      }
+      .joined(separator: " ")
+
+    return SameStoryComparisonDTO(
+      comparisonText: comparisonText,
+      unifiedStory: "Noticia unificada (demo): \(unifiedBody)"
+    )
+  }
+
+  func rankSimilarArticles(anchor: Article, candidates: [Article], limit: Int) async throws -> [String] {
+    try await Task.sleep(for: simulatedDelay)
+    return ArticleTopicMatcher
+      .related(to: anchor, from: candidates, limit: limit)
+      .map(\.id)
   }
 
   func generateDailyBriefing(articles: [Article], preferences: UserPreference) async throws -> DailyBriefingDTO {
@@ -114,9 +169,38 @@ struct MockAIService: AIService {
       articleId: article.id,
       explanation: """
       Contexto demo: «\(article.title)» fue publicado por \(article.sourceName). \
-      Prisma+ puede explicar antecedentes, actores clave y por qué importa ahora cuando el backend esté conectado.
+      Apple Intelligence puede explicar antecedentes, actores clave y por qué importa ahora, sin enviar datos a servidores.
       """
     )
+  }
+
+  func translateArticle(
+    _ article: Article,
+    to targetLanguageCode: String,
+    sourceLanguage: String?
+  ) async throws -> TranslationDTO {
+    try await Task.sleep(for: simulatedDelay)
+    let body = HTMLSanitizer.stripHTML(article.content ?? article.summary) ?? article.title
+    let languageName = ReadingLanguage.displayName(for: targetLanguageCode)
+    return TranslationDTO(
+      articleId: article.id,
+      targetLanguageCode: targetLanguageCode,
+      sourceLanguageCode: sourceLanguage,
+      translatedTitle: "[\(languageName)] \(article.title)",
+      translatedBody: "[Traducción demo → \(languageName)]\n\n\(String(body.prefix(1200)))",
+      provider: "mock",
+      generatedAt: .now
+    )
+  }
+
+  func translatePlainTexts(
+    _ texts: [String],
+    to targetLanguageCode: String,
+    sourceLanguage: String?
+  ) async throws -> [String] {
+    try await Task.sleep(for: simulatedDelay)
+    let languageName = ReadingLanguage.displayName(for: targetLanguageCode)
+    return texts.map { "[\(languageName)] \($0)" }
   }
 
   private func synthesizedTitle(for articles: [Article]) -> String {
@@ -140,7 +224,7 @@ struct MockAIService: AIService {
     let leadExcerpt = HTMLSanitizer.stripHTML(lead?.content ?? lead?.summary) ?? lead?.title ?? ""
     var paragraphs = [
       """
-      Prisma+ ha detectado que \(sources.joined(separator: ", ")) están cubriendo la misma historia con enfoques complementarios.
+      Varias fuentes (\(sources.joined(separator: ", "))) están cubriendo la misma historia con enfoques complementarios.
       """,
       String(leadExcerpt.prefix(420)),
     ]
@@ -151,7 +235,7 @@ struct MockAIService: AIService {
     }
 
     paragraphs.append(
-      "Esta síntesis demo agrupa coberturas relacionadas. Con Prisma+ conectado al backend, el resumen se generará a partir del contenido completo de cada fuente."
+      "Esta síntesis demo agrupa coberturas relacionadas. Con Apple Intelligence activo, el resumen se genera en tu dispositivo a partir del contenido de cada fuente."
     )
     return paragraphs.joined(separator: "\n\n")
   }

@@ -16,8 +16,14 @@ final class AppDependencies {
   let searchService: SearchService
   let recommendationEngine: RecommendationEngine
   let aiService: AIService
-  let subscriptionService: SubscriptionServiceProtocol
-  let plusGate: PrismaPlusGatekeeper
+  let translationService: ArticleTranslationService
+  let previewTranslationStore: ArticlePreviewTranslationStore
+  let redditCommentsService: RedditCommentsService
+  let redditCommentsTranslationService: RedditCommentsTranslationService
+  let summaryService: ArticleSummaryService
+  let insightRepository: AIArticleInsightRepository
+  let weatherService: WeatherService
+  let offlineReadingCoordinator: OfflineReadingCoordinator
 
   init(modelContainer: ModelContainer) {
     self.modelContainer = modelContainer
@@ -40,21 +46,56 @@ final class AppDependencies {
     recommendationEngine = RecommendationEngine()
     let primaryAI = AIServiceFactory.makePrimary()
     aiService = LocalFirstAIService(onDevice: primaryAI, fallback: MockAIService())
-
-    if AppConfiguration.useMockSubscription {
-      subscriptionService = MockSubscriptionService(preferenceRepository: preferenceRepository)
-    } else {
-      subscriptionService = StoreKitSubscriptionService(preferenceRepository: preferenceRepository)
-    }
-    plusGate = PrismaPlusGatekeeper(subscriptionService: subscriptionService)
+    translationService = ArticleTranslationService(
+      translationRepository: ArticleTranslationRepository(context: context),
+      preferenceRepository: preferenceRepository,
+      aiService: aiService
+    )
+    previewTranslationStore = ArticlePreviewTranslationStore(translationService: translationService)
+    redditCommentsService = RedditCommentsService(networkClient: networkClient)
+    redditCommentsTranslationService = RedditCommentsTranslationService(
+      repository: RedditCommentsTranslationRepository(context: context),
+      translationService: translationService,
+      aiService: aiService
+    )
+    summaryService = ArticleSummaryService(
+      summaryRepository: AIArticleSummaryRepository(context: context),
+      aiService: aiService
+    )
+    insightRepository = AIArticleInsightRepository(context: context)
+    weatherService = WeatherService(networkClient: networkClient)
+    offlineReadingCoordinator = OfflineReadingCoordinator(
+      feedService: feedService,
+      articleRepository: articleRepository,
+      feedSourceRepository: feedSourceRepository,
+      preferenceRepository: preferenceRepository,
+      translationService: translationService,
+      recommendationEngine: recommendationEngine,
+      previewStore: previewTranslationStore,
+      redditCommentsService: redditCommentsService,
+      redditCommentsTranslationService: redditCommentsTranslationService
+    )
   }
 
   func bootstrap() async throws {
     try feedSourceRepository.seedRecommendedIfNeeded()
     _ = try preferenceRepository.getOrCreate()
-    _ = try preferenceRepository.getOrCreateSubscriptionStatus()
     try enableDefaultSourcesIfNeeded()
-    await subscriptionService.updateStatus()
+    offlineReadingCoordinator.schedulePrefetch()
+  }
+
+  func refreshEnabledSourcesOnLaunchIfNeeded() async {
+    let enabled = (try? feedSourceRepository.fetchEnabled()) ?? []
+    guard !enabled.isEmpty else { return }
+
+    let isFirstRefresh = (try? preferenceRepository.getOrCreate().lastRefreshAt) == nil
+    if isFirstRefresh {
+      _ = await feedService.refreshAllLenient()
+      try? preferenceRepository.touchLastRefresh()
+      return
+    }
+
+    _ = await feedService.refreshEnabledWithoutFetchedData()
   }
 
   private func enableDefaultSourcesIfNeeded() throws {

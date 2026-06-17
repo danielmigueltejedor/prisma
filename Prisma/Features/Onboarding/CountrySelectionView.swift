@@ -46,8 +46,6 @@ struct CountrySelectionView: View {
       selectedCountry = country
     } label: {
       HStack(spacing: PrismaSpacing.sm) {
-        Text(country.flag)
-          .font(.title2)
         Text(country.displayName)
           .font(PrismaTypography.callout(.semibold))
           .foregroundStyle(PrismaColors.textPrimary)

@@ -2,17 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
   @Bindable var viewModel: SettingsViewModel
-  var subscriptionService: SubscriptionServiceProtocol
-  var onShowPaywall: () -> Void
 
   var body: some View {
     NavigationStack {
       PrismaScreen {
         Form {
-          SubscriptionManagementView(
-            subscriptionService: subscriptionService,
-            showPaywall: onShowPaywall
-          )
+          AppleIntelligenceSettingsSection()
 
           Section(String(localized: "settings.blocked")) {
             HStack {
@@ -36,27 +31,46 @@ struct SettingsView: View {
             }
           }
 
+          Section(String(localized: "settings.experiments")) {
+            Toggle(isOn: cascadeViewBinding) {
+              VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "settings.cascadeView"))
+                Text(String(localized: "settings.cascadeView.hint"))
+                  .font(PrismaTypography.caption())
+                  .foregroundStyle(PrismaColors.textSecondary)
+              }
+            }
+
+            VStack(alignment: .leading, spacing: PrismaSpacing.xxs) {
+              Label(String(localized: "settings.siriReading"), systemImage: "speaker.wave.2.fill")
+                .font(PrismaTypography.body())
+              Text(String(localized: "settings.siriReading.hint"))
+                .font(PrismaTypography.caption())
+                .foregroundStyle(PrismaColors.textSecondary)
+            }
+            .padding(.vertical, PrismaSpacing.xxs)
+          }
+
           Section(String(localized: "settings.general")) {
             Picker(selection: homeCountryBinding) {
               ForEach(NewsCountry.allCases) { country in
-                Label {
-                  Text(country.displayName)
-                } icon: {
-                  Text(country.flag)
-                }
-                .tag(country)
+                Text(country.displayName)
+                  .tag(country)
               }
             } label: {
               Label(String(localized: "settings.homeCountry"), systemImage: "globe")
             }
 
-            Picker(selection: appearanceBinding) {
-              ForEach(AppearanceMode.allCases) { mode in
-                Label(mode.displayName, systemImage: mode.iconName)
-                  .tag(mode)
+            VStack(alignment: .leading, spacing: PrismaSpacing.xxs) {
+              TextField(String(localized: "settings.weatherLocation"), text: weatherLocationBinding)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+              weatherLocationStatusView
+              if viewModel.weatherLocationLookup == .idle {
+                Text(String(localized: "settings.weatherLocationHint"))
+                  .font(PrismaTypography.caption())
+                  .foregroundStyle(PrismaColors.textSecondary)
               }
-            } label: {
-              Label(String(localized: "settings.theme"), systemImage: "moon.fill")
             }
 
             NavigationLink(String(localized: "settings.appearance")) {
@@ -76,6 +90,7 @@ struct SettingsView: View {
           Section(String(localized: "settings.about")) {
             LabeledContent(String(localized: "settings.version"), value: "1.0.0")
             Link(String(localized: "settings.privacyPolicy"), destination: AppConfiguration.privacyPolicyURL)
+            Link(String(localized: "settings.terms"), destination: AppConfiguration.termsURL)
           }
         }
         .scrollContentBackground(.hidden)
@@ -85,10 +100,10 @@ struct SettingsView: View {
     }
   }
 
-  private var appearanceBinding: Binding<AppearanceMode> {
+  private var cascadeViewBinding: Binding<Bool> {
     Binding(
-      get: { viewModel.preferences?.appearanceMode ?? .system },
-      set: { viewModel.setAppearance($0) }
+      get: { viewModel.preferences?.cascadeViewEnabled ?? false },
+      set: { viewModel.setCascadeViewEnabled($0) }
     )
   }
 
@@ -97,5 +112,44 @@ struct SettingsView: View {
       get: { viewModel.preferences?.homeCountry ?? .detected },
       set: { viewModel.setHomeCountry($0) }
     )
+  }
+
+  private var weatherLocationBinding: Binding<String> {
+    Binding(
+      get: { viewModel.preferences?.weatherLocationQuery ?? "" },
+      set: { viewModel.setWeatherLocation($0) }
+    )
+  }
+
+  @ViewBuilder
+  private var weatherLocationStatusView: some View {
+    switch viewModel.weatherLocationLookup {
+    case .idle:
+      EmptyView()
+    case .searching:
+      HStack(spacing: PrismaSpacing.xxs) {
+        ProgressView()
+          .controlSize(.small)
+        Text(String(localized: "settings.weatherLocationSearching"))
+          .font(PrismaTypography.caption())
+          .foregroundStyle(PrismaColors.textSecondary)
+      }
+    case .resolved(let match):
+      Label {
+        Text(String(localized: "settings.weatherLocationFound \(match.shortLabel)"))
+          .font(PrismaTypography.caption())
+      } icon: {
+        Image(systemName: "checkmark.circle.fill")
+          .foregroundStyle(.green)
+      }
+    case .notFound:
+      Label {
+        Text(String(localized: "settings.weatherLocationNotFound"))
+          .font(PrismaTypography.caption())
+      } icon: {
+        Image(systemName: "exclamationmark.triangle.fill")
+          .foregroundStyle(.orange)
+      }
+    }
   }
 }

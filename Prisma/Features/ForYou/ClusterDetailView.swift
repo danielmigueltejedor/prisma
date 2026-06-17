@@ -4,6 +4,7 @@ struct ClusterDetailView: View {
   @Environment(\.dismiss) private var dismiss
   let cluster: ClusterDTO
   let articles: [Article]
+  var previewStore: ArticlePreviewTranslationStore
   var onSelectArticle: (Article) -> Void
 
   var body: some View {
@@ -27,17 +28,17 @@ struct ClusterDetailView: View {
           Button(String(localized: "action.close")) { dismiss() }
         }
       }
+      .onAppear {
+        previewStore.refresh(for: articles)
+      }
     }
   }
 
   private var header: some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
-      HStack {
-        PrismaPlusBadge()
-        Text(String(localized: "foryou.synthesized"))
-          .font(PrismaTypography.caption(.semibold))
-          .foregroundStyle(PrismaColors.textSecondary)
-      }
+      Text(String(localized: "foryou.synthesized"))
+        .font(PrismaTypography.caption(.semibold))
+        .foregroundStyle(PrismaColors.textSecondary)
       Text(cluster.title)
         .font(PrismaTypography.largeTitle())
       if let sources = cluster.sourceNames, !sources.isEmpty {
@@ -49,7 +50,7 @@ struct ClusterDetailView: View {
   }
 
   private var storyBody: some View {
-    Text(cluster.synthesizedStory ?? cluster.summary ?? "")
+    Text(deduplicatedStoryBody)
       .font(PrismaTypography.readerBody())
       .foregroundStyle(PrismaColors.textPrimary)
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -88,18 +89,7 @@ struct ClusterDetailView: View {
 
       ForEach(articles, id: \.id) { article in
         Button { onSelectArticle(article) } label: {
-          ArticleCard(
-            title: article.title,
-            sourceName: article.sourceName,
-            publishedAt: article.publishedAt,
-            summary: HTMLSanitizer.stripHTML(article.summary),
-            imageURL: article.imageUrl.flatMap(URL.init(string:)),
-            isRead: article.isRead,
-            isSaved: article.isSaved,
-            readingTimeMinutes: article.readingTimeEstimate,
-            sourceSiteURL: article.feedSource?.siteURL,
-            sourceFeedURL: article.originalFeedUrl
-          )
+          TranslatedArticleCard(article: article, previewStore: previewStore)
         }
         .buttonStyle(.plain)
       }
@@ -117,6 +107,13 @@ struct ClusterDetailView: View {
         feedURL: article.originalFeedUrl
       )
     }
+  }
+
+  private var deduplicatedStoryBody: String {
+    AITextFormatter.bodyWithoutRepeatedHeadline(
+      headline: cluster.title,
+      body: cluster.synthesizedStory ?? cluster.summary ?? ""
+    )
   }
 }
 

@@ -10,6 +10,15 @@ struct AddSourceView: View {
   var body: some View {
     NavigationStack {
       Form {
+        Section {
+          StyleFilterBar(
+            filters: viewModel.recommendedStyleFilters,
+            selection: $viewModel.selectedStyle
+          )
+          .listRowInsets(EdgeInsets())
+          .listRowBackground(Color.clear)
+        }
+
         Section(String(localized: "sources.add.manual")) {
           TextField(String(localized: "sources.field.name"), text: $name)
           TextField(String(localized: "sources.field.url"), text: $url)
@@ -26,6 +35,8 @@ struct AddSourceView: View {
             feeds: viewModel.localRecommended
           )
           recommendedSection(String(localized: "sources.international"), feeds: viewModel.internationalRecommended)
+          recommendedSection(String(localized: "sources.reddit"), feeds: viewModel.redditRecommended)
+          recommendedSection(String(localized: "sources.social"), feeds: viewModel.socialRecommended)
 
           if !viewModel.otherRecommended.isEmpty {
             DisclosureGroup(
@@ -47,16 +58,16 @@ struct AddSourceView: View {
       .navigationTitle(String(localized: "sources.add"))
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
-          Button(String(localized: "action.cancel")) { dismiss() }
+          PrismaDismissButton { dismiss() }
         }
         ToolbarItem(placement: .confirmationAction) {
           Button(String(localized: "action.save")) {
             Task {
-              await viewModel.addManual(name: name, url: url)
-              dismiss()
+              let added = await viewModel.addManual(name: name, url: url)
+              if added { dismiss() }
             }
           }
-          .disabled(url.trimmingCharacters(in: .whitespaces).isEmpty)
+          .disabled(url.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isRefreshing)
         }
       }
     }
@@ -89,7 +100,12 @@ struct AddSourceView: View {
 
   private func recommendedRow(_ feed: RecommendedFeed) -> some View {
     HStack(spacing: PrismaSpacing.sm) {
-      SourceIconView(siteURL: feed.siteURL, feedURL: feed.feedURL, size: 32)
+      SourceIconView(
+        siteURL: feed.siteURL,
+        feedURL: feed.feedURL,
+        platform: feed.feedPlatform,
+        size: 32
+      )
       VStack(alignment: .leading) {
         Text(feed.name)
           .font(PrismaTypography.body(.medium))
@@ -101,6 +117,7 @@ struct AddSourceView: View {
       Button(String(localized: "action.add")) {
         Task { await viewModel.addRecommended(feed) }
       }
+      .disabled(viewModel.isRefreshing)
     }
   }
 }

@@ -30,8 +30,11 @@ enum PrismaTypography {
     }
 
     /// Scales article reader text based on user preference multiplier.
-    static func readerBody(sizeMultiplier: Double = 1.0) -> Font {
-        .system(size: 17 * sizeMultiplier, weight: .regular, design: .serif)
+    static func readerBody(
+      sizeMultiplier: Double = 1.0,
+      family: ReaderFontFamily = .serif
+    ) -> Font {
+        .system(size: 17 * sizeMultiplier, weight: .regular, design: family.fontDesign)
     }
 
     static func readerTitle(sizeMultiplier: Double = 1.0) -> Font {

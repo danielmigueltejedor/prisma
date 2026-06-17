@@ -12,6 +12,7 @@ final class Article {
   var publishedAt: Date?
   var updatedAt: Date?
   var summary: String?
+  var plainSummary: String?
   var content: String?
   var imageUrl: String?
   var categoryNames: [String]
@@ -41,6 +42,11 @@ final class Article {
     set { contentAvailabilityRaw = newValue.rawValue }
   }
 
+  var resolvedImageURL: URL? {
+    guard let imageUrl else { return nil }
+    return URL(string: ArticleImageURLResolver.resolve(imageUrl))
+  }
+
   init(
     id: String,
     title: String,
@@ -51,6 +57,7 @@ final class Article {
     publishedAt: Date? = nil,
     updatedAt: Date? = nil,
     summary: String? = nil,
+    plainSummary: String? = nil,
     content: String? = nil,
     imageUrl: String? = nil,
     categoryNames: [String] = [],
@@ -74,6 +81,7 @@ final class Article {
     self.publishedAt = publishedAt
     self.updatedAt = updatedAt
     self.summary = summary
+    self.plainSummary = plainSummary
     self.content = content
     self.imageUrl = imageUrl
     self.categoryNames = categoryNames

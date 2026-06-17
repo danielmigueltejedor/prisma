@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SavedView: View {
   @Bindable var viewModel: SavedViewModel
+  var previewStore: ArticlePreviewTranslationStore
   var onSelectArticle: (Article) -> Void
 
   @State private var newCollectionName = ""
@@ -10,46 +11,35 @@ struct SavedView: View {
   var body: some View {
     NavigationStack {
       PrismaScreen {
-        if viewModel.displayedArticles.isEmpty {
-          EmptyStateView(
-            icon: "bookmark",
-            title: String(localized: "saved.empty.title"),
-            message: String(localized: "saved.empty.message")
-          )
-        } else {
-          ScrollView {
-            LazyVStack(spacing: PrismaSpacing.sm) {
-              Picker(String(localized: "saved.filter"), selection: $viewModel.selectedFilter) {
-                ForEach(SavedViewModel.SavedFilter.allCases) { filter in
-                  Text(filter.title).tag(filter)
+        VStack(alignment: .leading, spacing: PrismaSpacing.md) {
+          SavedLibraryFilterBar(selection: $viewModel.selectedFilter)
+            .padding(.horizontal, PrismaSpacing.md)
+            .padding(.top, PrismaSpacing.sm)
+
+          if viewModel.displayedArticles.isEmpty {
+            EmptyStateView(
+              icon: viewModel.selectedFilter.emptyIcon,
+              title: viewModel.selectedFilter.emptyTitle,
+              message: viewModel.selectedFilter.emptyMessage
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          } else {
+            ScrollView {
+              LazyVStack(spacing: PrismaSpacing.sm) {
+                if !viewModel.collections.isEmpty, viewModel.selectedFilter == .saved {
+                  collectionsSection
+                }
+
+                ForEach(viewModel.displayedArticles, id: \.id) { article in
+                  Button { onSelectArticle(article) } label: {
+                    TranslatedArticleCard(article: article, previewStore: previewStore)
+                  }
+                  .buttonStyle(.plain)
                 }
               }
-              .pickerStyle(.segmented)
-              .padding(.bottom, PrismaSpacing.sm)
-
-              if !viewModel.collections.isEmpty {
-                collectionsSection
-              }
-
-              ForEach(viewModel.displayedArticles, id: \.id) { article in
-                Button { onSelectArticle(article) } label: {
-                  ArticleCard(
-                    title: article.title,
-                    sourceName: article.sourceName,
-                    publishedAt: article.publishedAt,
-                    summary: HTMLSanitizer.stripHTML(article.summary),
-                    imageURL: article.imageUrl.flatMap(URL.init(string:)),
-                    isRead: article.isRead,
-                    isSaved: article.isSaved,
-                    readingTimeMinutes: article.readingTimeEstimate,
-                    sourceSiteURL: article.feedSource?.siteURL,
-                    sourceFeedURL: article.originalFeedUrl
-                  )
-                }
-                .buttonStyle(.plain)
-              }
+              .padding(.horizontal, PrismaSpacing.md)
+              .padding(.bottom, PrismaSpacing.md)
             }
-            .padding(PrismaSpacing.md)
           }
         }
       }
@@ -71,7 +61,17 @@ struct SavedView: View {
         }
         Button(String(localized: "action.cancel"), role: .cancel) {}
       }
-      .onAppear { viewModel.load() }
+      .onAppear {
+        viewModel.reload()
+        previewStore.refresh(for: viewModel.displayedArticles)
+      }
+      .onChange(of: viewModel.selectedFilter) { _, _ in
+        previewStore.refresh(for: viewModel.displayedArticles)
+      }
+      .onReceive(NotificationCenter.default.publisher(for: .articleLibraryDidChange)) { _ in
+        viewModel.reload()
+        previewStore.refresh(for: viewModel.displayedArticles)
+      }
     }
   }
 
@@ -87,6 +87,6 @@ struct SavedView: View {
         }
       }
     }
-    .padding(.bottom, PrismaSpacing.sm)
+    .padding(.bottom, PrismaSpacing.xs)
   }
 }

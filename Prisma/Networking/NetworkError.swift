@@ -6,6 +6,7 @@ enum NetworkError: LocalizedError {
   case httpStatus(Int)
   case noData
   case decodingFailed
+  case responseTooLarge
 
   var errorDescription: String? {
     switch self {
@@ -19,6 +20,8 @@ enum NetworkError: LocalizedError {
       String(localized: "error.network.noData")
     case .decodingFailed:
       String(localized: "error.network.decoding")
+    case .responseTooLarge:
+      String(localized: "error.network.responseTooLarge")
     }
   }
 }

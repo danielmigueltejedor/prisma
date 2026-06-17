@@ -21,17 +21,6 @@ final class PreferenceRepository {
     return preference
   }
 
-  func getOrCreateSubscriptionStatus() throws -> SubscriptionStatus {
-    let descriptor = FetchDescriptor<SubscriptionStatus>()
-    if let existing = try context.fetch(descriptor).first {
-      return existing
-    }
-    let status = SubscriptionStatus()
-    context.insert(status)
-    try context.save()
-    return status
-  }
-
   func completeOnboarding(homeCountryCode: String) throws {
     let prefs = try getOrCreate()
     prefs.hasCompletedOnboarding = true
@@ -42,6 +31,12 @@ final class PreferenceRepository {
   func setHomeCountry(_ code: String) throws {
     let prefs = try getOrCreate()
     prefs.homeCountryCode = code
+    try save()
+  }
+
+  func touchLastRefresh(at date: Date = .now) throws {
+    let prefs = try getOrCreate()
+    prefs.lastRefreshAt = date
     try save()
   }
 

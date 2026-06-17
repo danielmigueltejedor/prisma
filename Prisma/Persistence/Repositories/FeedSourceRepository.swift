@@ -9,6 +9,13 @@ final class FeedSourceRepository {
     self.context = context
   }
 
+  func fetchBlockedSourceIds() throws -> Set<UUID> {
+    let descriptor = FetchDescriptor<FeedSource>(
+      predicate: #Predicate { $0.isBlocked }
+    )
+    return Set(try context.fetch(descriptor).map(\.id))
+  }
+
   func fetchAll() throws -> [FeedSource] {
     let descriptor = FetchDescriptor<FeedSource>(
       sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.name)]
@@ -52,23 +59,35 @@ final class FeedSourceRepository {
     feedURL: String,
     siteURL: String? = nil,
     isRecommended: Bool = false,
-    countryCode: String? = nil
+    countryCode: String? = nil,
+    feedDescription: String? = nil,
+    platform: FeedPlatform? = nil
   ) throws -> FeedSource {
     if let existing = try find(byURL: feedURL) {
       if existing.countryCode == nil, let countryCode {
         existing.countryCode = countryCode
-        try context.save()
       }
+      if existing.feedDescription == nil, let feedDescription {
+        existing.feedDescription = feedDescription
+      }
+      if existing.platform == .news, let platform {
+        existing.platform = platform
+      }
+      try context.save()
       return existing
     }
+    let resolvedPlatform = platform ?? FeedPlatform.detect(feedURL: feedURL, siteURL: siteURL)
+    let resolvedURL = SocialFeedURLResolver.canonicalFeedURL(from: feedURL, platform: resolvedPlatform)
     let count = try fetchAll().count
     let source = FeedSource(
       name: name,
-      feedURL: feedURL,
+      feedURL: resolvedURL,
       siteURL: siteURL,
       isRecommended: isRecommended,
       sortOrder: count,
-      countryCode: countryCode
+      countryCode: countryCode,
+      feedDescription: feedDescription,
+      platform: resolvedPlatform
     )
     context.insert(source)
     try context.save()
@@ -88,14 +107,20 @@ final class FeedSourceRepository {
     let existing = try fetchAll()
     if existing.isEmpty {
       for (index, feed) in RecommendedFeeds.loadFromBundle().enumerated() {
+        let canonicalURL = SocialFeedURLResolver.canonicalFeedURL(
+          from: feed.feedURL,
+          platform: feed.feedPlatform
+        )
         let source = FeedSource(
           name: feed.name,
-          feedURL: feed.feedURL,
+          feedURL: canonicalURL,
           siteURL: feed.siteURL,
           isEnabled: false,
           isRecommended: true,
           sortOrder: index,
-          countryCode: feed.countryCode
+          countryCode: feed.countryCode,
+          feedDescription: feed.description,
+          platform: feed.feedPlatform
         )
         context.insert(source)
       }
@@ -107,27 +132,57 @@ final class FeedSourceRepository {
 
   /// Añade fuentes nuevas del catálogo JSON sin duplicar las existentes.
   private func syncCatalogWithExistingSources() throws {
-    let existingURLs = Set(try fetchAll().map(\.feedURL))
-    var sortOrder = try fetchAll().count
+    let allSources = try fetchAll()
+    let existingURLs = Set(allSources.map(\.feedURL))
+    var sortOrder = allSources.count
 
-    for feed in RecommendedFeeds.loadFromBundle() where !existingURLs.contains(feed.feedURL) {
+    for feed in RecommendedFeeds.loadFromBundle() {
+      let canonicalURL = SocialFeedURLResolver.canonicalFeedURL(
+        from: feed.feedURL,
+        platform: feed.feedPlatform
+      )
+
+      if let existing = allSources.first(where: { stored in
+        RecommendedFeeds.matching(stored)?.id == feed.id
+          || stored.feedURL == feed.feedURL
+          || stored.feedURL == canonicalURL
+      }) {
+        if feed.feedPlatform == .news {
+          existing.feedURL = feed.feedURL
+          if let siteURL = feed.siteURL {
+            existing.siteURL = siteURL
+          }
+          existing.platform = .news
+        } else {
+          existing.feedURL = canonicalURL
+          if let fallback = feed.fallbackFeedURL, existing.platform == .x {
+            existing.feedURL = fallback
+          }
+          existing.platform = feed.feedPlatform
+          if let siteURL = feed.siteURL {
+            existing.siteURL = siteURL
+          }
+        }
+        existing.feedDescription = feed.description ?? existing.feedDescription
+        if existing.countryCode == nil { existing.countryCode = feed.countryCode }
+        continue
+      }
+
+      guard !existingURLs.contains(canonicalURL) else { continue }
+
       let source = FeedSource(
         name: feed.name,
-        feedURL: feed.feedURL,
+        feedURL: canonicalURL,
         siteURL: feed.siteURL,
         isEnabled: false,
         isRecommended: true,
         sortOrder: sortOrder,
-        countryCode: feed.countryCode
+        countryCode: feed.countryCode,
+        feedDescription: feed.description,
+        platform: feed.feedPlatform
       )
       context.insert(source)
       sortOrder += 1
-    }
-
-    for source in try fetchAll() where source.countryCode == nil {
-      if let feed = RecommendedFeeds.find(feedURL: source.feedURL) {
-        source.countryCode = feed.countryCode
-      }
     }
 
     try context.save()
@@ -146,7 +201,9 @@ final class FeedSourceRepository {
     let allSources = try fetchAll()
 
     for feed in toEnable {
-      guard let source = allSources.first(where: { $0.feedURL == feed.feedURL }) else { continue }
+      guard let source = allSources.first(where: { RecommendedFeeds.matching($0)?.id == feed.id }) else {
+        continue
+      }
       source.isEnabled = true
       source.countryCode = feed.countryCode
       try update(source)

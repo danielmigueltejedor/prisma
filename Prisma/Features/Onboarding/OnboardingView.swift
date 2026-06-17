@@ -2,9 +2,6 @@ import SwiftUI
 
 struct OnboardingView: View {
   @Bindable var viewModel: OnboardingViewModel
-  var subscriptionService: SubscriptionServiceProtocol
-
-  @State private var showPaywall = false
 
   var body: some View {
     PrismaScreen {
@@ -15,7 +12,7 @@ struct OnboardingView: View {
           case 1: countryPage
           case 2: sourcesPage
           case 3: privacyPage
-          case 4: plusPage
+          case 4: aiPage
           default: welcomePage
           }
         }
@@ -33,15 +30,6 @@ struct OnboardingView: View {
           .padding(.bottom, PrismaSpacing.lg)
         }
       }
-    }
-    .sheet(isPresented: $showPaywall) {
-      PaywallView(
-        subscriptionService: subscriptionService,
-        onContinueFree: {
-          showPaywall = false
-          finish()
-        }
-      )
     }
   }
 
@@ -86,24 +74,24 @@ struct OnboardingView: View {
     )
   }
 
-  private var plusPage: some View {
+  private var aiPage: some View {
     VStack(spacing: PrismaSpacing.lg) {
       onboardingPage(
-        icon: "sparkles",
-        title: "Prisma+",
-        subtitle: String(localized: "onboarding.plus.subtitle"),
-        body: String(localized: "onboarding.plus.body")
+        icon: "apple.intelligence",
+        title: String(localized: "onboarding.ai.title"),
+        subtitle: String(localized: "onboarding.ai.subtitle"),
+        body: String(localized: "onboarding.ai.body")
       )
 
-      VStack(spacing: PrismaSpacing.sm) {
-        PrismaButton(title: String(localized: "paywall.startTrial")) {
-          showPaywall = true
-        }
-        PrismaButton(title: String(localized: "paywall.continueFree"), style: .secondary) {
-          finish()
-        }
+      if AIServiceFactory.hasFreeOnDeviceAI {
+        LocalAIBadge()
+      }
+
+      PrismaButton(title: String(localized: "onboarding.start")) {
+        finish()
       }
       .padding(.horizontal, PrismaSpacing.lg)
+      .padding(.bottom, PrismaSpacing.lg)
     }
   }
 

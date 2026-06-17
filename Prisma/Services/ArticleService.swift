@@ -25,11 +25,18 @@ final class ArticleService {
     try articleRepository.markRead(article)
   }
 
+  func recordDwellTime(_ article: Article, seconds: TimeInterval) throws {
+    try articleRepository.recordDwellTime(article, seconds: seconds)
+    ArticleLibraryNotifier.publish()
+  }
+
   func toggleSaved(_ article: Article) throws {
     try articleRepository.toggleSaved(article)
+    ArticleLibraryNotifier.publish()
   }
 
   func toggleFavorite(_ article: Article) throws {
     try articleRepository.toggleFavorite(article)
+    ArticleLibraryNotifier.publish()
   }
 }

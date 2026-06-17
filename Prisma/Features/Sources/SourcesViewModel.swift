@@ -5,6 +5,7 @@ import Foundation
 final class SourcesViewModel {
   var sources: [FeedSource] = []
   var searchText = ""
+  var selectedStyle = "Todas"
   var showOtherCountries = false
   var isRefreshing = false
   var errorMessage: String?
@@ -44,52 +45,120 @@ final class SourcesViewModel {
     filtered(RecommendedFeeds.other(excluding: homeCountryCode))
   }
 
+  var redditRecommended: [RecommendedFeed] {
+    filtered(RecommendedFeeds.reddit())
+  }
+
+  var socialRecommended: [RecommendedFeed] {
+    filtered(RecommendedFeeds.social())
+  }
+
   var isSearching: Bool {
     !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
+  var styleFilters: [String] {
+    let styles = Set(sources.map { ContentStyleFilter.style(for: $0) })
+    return ContentStyleFilter.filters(including: styles)
+  }
+
+  var recommendedStyleFilters: [String] {
+    ContentStyleFilter.filters()
+  }
+
   var filteredRecommended: [RecommendedFeed] {
     if isSearching {
-      return filtered(RecommendedFeeds.forHomeCountry(homeCountryCode) + RecommendedFeeds.other(excluding: homeCountryCode))
+      return filtered(
+        RecommendedFeeds.loadFromBundle().filter {
+          $0.feedPlatform == .news || $0.feedPlatform == .reddit || $0.feedPlatform == .x
+        }
+      )
     }
     return []
   }
 
-  private func filtered(_ feeds: [RecommendedFeed]) -> [RecommendedFeed] {
-    guard isSearching else { return feeds }
-    let query = searchText.lowercased()
-    return feeds.filter {
-      $0.name.lowercased().contains(query)
-        || $0.category.lowercased().contains(query)
-        || NewsCountry.from(code: $0.countryCode)?.displayName.lowercased().contains(query) == true
+  var displayedSources: [FeedSource] {
+    let base: [FeedSource]
+    if isSearching {
+      let query = searchText.lowercased()
+      base = sources.filter {
+        $0.name.lowercased().contains(query)
+          || $0.feedURL.lowercased().contains(query)
+          || ($0.siteURL?.lowercased().contains(query) ?? false)
+          || $0.platform.displayName.lowercased().contains(query)
+      }
+    } else {
+      base = sources
+    }
+    return base.filter {
+      ContentStyleFilter.matches(
+        style: ContentStyleFilter.style(for: $0),
+        selection: selectedStyle
+      )
     }
   }
 
-  func load() {
+  private func filtered(_ feeds: [RecommendedFeed]) -> [RecommendedFeed] {
+    var result = feeds
+    if isSearching {
+      let query = searchText.lowercased()
+      result = result.filter {
+        $0.name.lowercased().contains(query)
+          || $0.category.lowercased().contains(query)
+          || NewsCountry.from(code: $0.countryCode)?.displayName.lowercased().contains(query) == true
+      }
+    }
+    if selectedStyle != ContentStyleFilter.allSelection {
+      result = result.filter {
+        ContentStyleFilter.matches(
+          style: ContentStyleFilter.style(for: $0),
+          selection: selectedStyle
+        )
+      }
+    }
+    return result
+  }
+
+  private var hasLoadedData = false
+
+  func loadIfNeeded() {
+    guard !hasLoadedData else { return }
+    reload()
+  }
+
+  func reload() {
     do {
       sources = try feedSourceRepository.fetchAll()
+      hasLoadedData = true
       _ = try? preferenceRepository.getOrCreate()
     } catch {
       errorMessage = error.localizedDescription
     }
   }
 
+  func load() {
+    reload()
+  }
+
   func toggleEnabled(_ source: FeedSource) {
+    let willEnable = !source.isEnabled
     source.isEnabled.toggle()
     try? feedSourceRepository.update(source)
-    load()
+    if willEnable {
+      Task { await refreshSource(source) }
+    }
   }
 
   func toggleFavorite(_ source: FeedSource) {
     source.isFavorite.toggle()
     try? feedSourceRepository.update(source)
-    load()
+    PreferencesNotifier.publish()
   }
 
   func toggleBlocked(_ source: FeedSource) {
     source.isBlocked.toggle()
     try? feedSourceRepository.update(source)
-    load()
+    PreferencesNotifier.publish()
   }
 
   func delete(_ source: FeedSource) {
@@ -103,7 +172,8 @@ final class SourcesViewModel {
     load()
   }
 
-  func addManual(name: String, url: String) async {
+  @discardableResult
+  func addManual(name: String, url: String) async -> Bool {
     isRefreshing = true
     defer { isRefreshing = false }
     do {
@@ -116,12 +186,15 @@ final class SourcesViewModel {
       )
       successMessage = String(localized: "sources.added")
       load()
+      return true
     } catch {
       errorMessage = error.localizedDescription
+      return false
     }
   }
 
-  func addRecommended(_ feed: RecommendedFeed) async {
+  @discardableResult
+  func addRecommended(_ feed: RecommendedFeed) async -> Bool {
     isRefreshing = true
     defer { isRefreshing = false }
     do {
@@ -129,17 +202,27 @@ final class SourcesViewModel {
         name: feed.name,
         feedURL: feed.feedURL,
         siteURL: feed.siteURL,
-        countryCode: feed.countryCode
+        countryCode: feed.countryCode,
+        feedDescription: feed.description,
+        platform: feed.feedPlatform
       )
       if let source = try feedSourceRepository.find(byURL: feed.feedURL) {
         source.isRecommended = true
         source.countryCode = feed.countryCode
+        source.feedDescription = feed.description
+        source.platform = feed.feedPlatform
+        source.feedURL = SocialFeedURLResolver.canonicalFeedURL(
+          from: feed.feedURL,
+          platform: feed.feedPlatform
+        )
         try feedSourceRepository.update(source)
       }
       successMessage = String(localized: "sources.added")
       load()
+      return true
     } catch {
       errorMessage = error.localizedDescription
+      return false
     }
   }
 
@@ -149,18 +232,23 @@ final class SourcesViewModel {
     do {
       _ = try await feedService.refresh(source: source)
       load()
+      FeedRefreshNotifier.publish()
     } catch {
       errorMessage = error.localizedDescription
     }
   }
 
   func importOPML(data: Data) {
-    do {
-      let count = try feedService.importOPML(data: data)
-      successMessage = String(localized: "sources.imported \(count)")
-      load()
-    } catch {
-      errorMessage = error.localizedDescription
+    Task {
+      isRefreshing = true
+      defer { isRefreshing = false }
+      do {
+        let count = try await feedService.importOPML(data: data)
+        successMessage = String(localized: "sources.imported \(count)")
+        load()
+      } catch {
+        errorMessage = error.localizedDescription
+      }
     }
   }
 

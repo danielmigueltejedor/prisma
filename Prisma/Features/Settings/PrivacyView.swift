@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct PrivacyView: View {
+  @Environment(\.openURL) private var openURL
+
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: PrismaSpacing.lg) {
@@ -12,8 +14,8 @@ struct PrivacyView: View {
           body: String(localized: "privacy.local.body")
         )
         privacySection(
-          title: String(localized: "privacy.plus.title"),
-          body: String(localized: "privacy.plus.body")
+          title: String(localized: "privacy.ai.title"),
+          body: String(localized: "privacy.ai.body")
         )
         privacySection(
           title: String(localized: "privacy.data.title"),
@@ -23,6 +25,20 @@ struct PrivacyView: View {
           title: String(localized: "privacy.ads.title"),
           body: String(localized: "privacy.ads.body")
         )
+
+        VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
+          privacySection(
+            title: String(localized: "privacy.support.title"),
+            body: String(localized: "privacy.support.body")
+          )
+
+          PrismaButton(
+            title: String(localized: "privacy.support.donate"),
+            style: .secondary
+          ) {
+            openURL(AppConfiguration.buyMeACoffeeURL)
+          }
+        }
       }
       .padding(PrismaSpacing.lg)
     }

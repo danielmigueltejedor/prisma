@@ -12,8 +12,7 @@ struct AppearanceSettingsView: View {
       Section(String(localized: "settings.theme")) {
         Picker(String(localized: "settings.theme"), selection: appearanceBinding) {
           ForEach(AppearanceMode.allCases) { mode in
-            Label(mode.displayName, systemImage: mode.iconName)
-              .tag(mode)
+            Text(mode.displayName).tag(mode)
           }
         }
         .pickerStyle(.inline)
@@ -21,6 +20,12 @@ struct AppearanceSettingsView: View {
       }
 
       Section(String(localized: "settings.reader")) {
+        Picker(String(localized: "reader.typography.font"), selection: fontFamilyBinding) {
+          ForEach(ReaderFontFamily.allCases) { family in
+            Text(family.displayName).tag(family)
+          }
+        }
+
         VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
           Text(String(localized: "settings.fontSize"))
           Slider(
@@ -32,7 +37,10 @@ struct AppearanceSettingsView: View {
             step: 0.1
           )
           Text(String(localized: "settings.fontPreview"))
-            .font(PrismaTypography.readerBody(sizeMultiplier: viewModel.preferences?.readerFontSizeMultiplier ?? 1))
+            .font(PrismaTypography.readerBody(
+              sizeMultiplier: viewModel.preferences?.readerFontSizeMultiplier ?? 1,
+              family: viewModel.preferences?.readerFontFamily ?? .serif
+            ))
         }
       }
     }
@@ -48,14 +56,17 @@ struct AppearanceSettingsView: View {
     )
   }
 
+  private var fontFamilyBinding: Binding<ReaderFontFamily> {
+    Binding(
+      get: { viewModel.preferences?.readerFontFamily ?? .serif },
+      set: { viewModel.setReaderFontFamily($0) }
+    )
+  }
+
   private var themePreview: some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
-      HStack {
-        Image(systemName: currentMode.iconName)
-          .foregroundStyle(PrismaColors.accentFallback)
-        Text(currentMode.displayName)
-          .font(PrismaTypography.headline())
-      }
+      Text(currentMode.displayName)
+        .font(PrismaTypography.headline())
       Text(String(localized: "settings.themePreview"))
         .font(PrismaTypography.callout())
         .foregroundStyle(PrismaColors.textSecondary)

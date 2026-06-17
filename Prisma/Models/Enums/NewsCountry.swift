@@ -61,4 +61,46 @@ enum NewsCountry: String, CaseIterable, Identifiable, Codable {
     }
     return .usa
   }
+
+  var usesFahrenheit: Bool {
+    self == .usa
+  }
+
+  /// City shown when no custom weather location is set.
+  var weatherDefaultLocality: String {
+    switch self {
+    case .spain: "Madrid"
+    case .mexico: "Ciudad de México"
+    case .argentina: "Buenos Aires"
+    case .colombia: "Bogotá"
+    case .chile: "Santiago"
+    case .peru: "Lima"
+    case .usa: "New York"
+    case .uk: "London"
+    case .france: "Paris"
+    case .germany: "Berlin"
+    case .italy: "Rome"
+    case .portugal: "Lisbon"
+    case .brazil: "São Paulo"
+    }
+  }
+
+  /// Representative coordinates for weather (capital or major city).
+  var weatherCoordinates: (latitude: Double, longitude: Double) {
+    switch self {
+    case .spain: (40.4168, -3.7038)
+    case .mexico: (19.4326, -99.1332)
+    case .argentina: (-34.6037, -58.3816)
+    case .colombia: (4.711, -74.0721)
+    case .chile: (-33.4489, -70.6693)
+    case .peru: (-12.0464, -77.0428)
+    case .usa: (40.7128, -74.0060)
+    case .uk: (51.5074, -0.1278)
+    case .france: (48.8566, 2.3522)
+    case .germany: (52.5200, 13.4050)
+    case .italy: (41.9028, 12.4964)
+    case .portugal: (38.7223, -9.1393)
+    case .brazil: (-23.5505, -46.6333)
+    }
+  }
 }

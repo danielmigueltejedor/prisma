@@ -111,6 +111,10 @@ final class RSSAtomParser: NSObject, FeedParserProtocol {
       return
     }
 
+    if builder.imageURL == nil {
+      builder.imageURL = Self.extractFirstImageURL(from: builder.content ?? builder.summary)
+    }
+
     let availability = Self.contentAvailability(summary: builder.summary, content: builder.content)
     let article = ParsedArticle(
       title: HTMLSanitizer.stripHTML(builder.title) ?? builder.title,
@@ -139,6 +143,18 @@ final class RSSAtomParser: NSObject, FeedParserProtocol {
     return .unknown
   }
 
+  private static func extractFirstImageURL(from html: String?) -> String? {
+    guard let html, !html.isEmpty else { return nil }
+    let pattern = #"<img[^>]+src=["']([^"']+)["']"#
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+          let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+          let range = Range(match.range(at: 1), in: html)
+    else { return nil }
+    let url = String(html[range])
+    guard url.hasPrefix("http") else { return nil }
+    return ArticleImageURLResolver.resolve(url)
+  }
+
   private struct ArticleBuilder {
     var title: String = ""
     var link: String = ""
@@ -149,6 +165,7 @@ final class RSSAtomParser: NSObject, FeedParserProtocol {
     var summary: String?
     var content: String?
     var imageURL: String?
+    var imageURLWidth: Int = 0
     var categories: [String] = []
   }
 }
@@ -178,11 +195,15 @@ extension RSSAtomParser: XMLParserDelegate {
       }
       if name == "enclosure", let url = attributeDict["url"],
          attributeDict["type"]?.contains("image") == true || updated.imageURL == nil {
-        updated.imageURL = url
+        updated.imageURL = ArticleImageURLResolver.resolve(url)
       }
       if name == "media:content" || name == "media:thumbnail",
          let url = attributeDict["url"] {
-        updated.imageURL = url
+        let width = Int(attributeDict["width"] ?? "0") ?? 0
+        if updated.imageURL == nil || width >= updated.imageURLWidth {
+          updated.imageURL = ArticleImageURLResolver.resolve(url)
+          updated.imageURLWidth = width
+        }
       }
       currentArticle = updated
     }

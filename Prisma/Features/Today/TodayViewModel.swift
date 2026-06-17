@@ -3,80 +3,155 @@ import Foundation
 @MainActor
 @Observable
 final class TodayViewModel {
+  private static let minRefreshInterval: TimeInterval = 15 * 60
+  private static let searchDebounceNanoseconds: UInt64 = 280_000_000
+
   var articles: [Article] = []
   var favoriteSourceArticles: [Article] = []
-  var trendingArticles: [Article] = []
   var recentlySaved: [Article] = []
   var searchResults: [Article] = []
   var searchText = ""
+  var selectedStyle = "Todas"
   var showUnreadOnly = false
   var isLoading = false
   var errorMessage: String?
+  var weather: WeatherSnapshot?
 
   private let articleService: ArticleService
   private let feedService: FeedService
   private let feedSourceRepository: FeedSourceRepository
   private let preferenceRepository: PreferenceRepository
   private let searchService: SearchService
+  private let weatherService: WeatherService
+  private var searchableTextByArticleId: [String: String] = [:]
+  private var hasLoadedData = false
+  private var searchTask: Task<Void, Never>?
 
   init(
     articleService: ArticleService,
     feedService: FeedService,
     feedSourceRepository: FeedSourceRepository,
     preferenceRepository: PreferenceRepository,
-    searchService: SearchService
+    searchService: SearchService,
+    translationService: ArticleTranslationService,
+    weatherService: WeatherService
   ) {
     self.articleService = articleService
     self.feedService = feedService
     self.feedSourceRepository = feedSourceRepository
     self.preferenceRepository = preferenceRepository
     self.searchService = searchService
+    self.weatherService = weatherService
+    _ = translationService
   }
 
   var displayedArticles: [Article] {
-    let base = searchText.isEmpty ? articles : searchResults
-    if showUnreadOnly {
-      return base.filter { !$0.isRead }
-    }
-    return base
+    cachedDisplayedArticles
   }
 
-  func load() {
+  var styleFilters: [String] {
+    cachedStyleFilters
+  }
+
+  var latestArticles: [Article] {
+    cachedLatestArticles
+  }
+
+  private var cachedDisplayedArticles: [Article] = []
+  private var cachedStyleFilters: [String] = ["Todas"]
+  private var cachedLatestArticles: [Article] = []
+
+  var isSearching: Bool {
+    !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
+  func loadIfNeeded() {
+    guard !hasLoadedData else { return }
+    reload()
+    Task { await loadWeather() }
+  }
+
+  func handleFeedsRefreshed() {
+    reload()
+  }
+
+  func reload() {
     do {
       let prefs = try preferenceRepository.getOrCreate()
-      let blockedSources = Set(try feedSourceRepository.fetchAll().filter(\.isBlocked).map(\.id))
+      let blockedSources = try feedSourceRepository.fetchBlockedSourceIds()
       articles = try articleService.chronologicalFeed(
         blockedKeywords: prefs.blockedKeywords,
         blockedSourceIds: blockedSources,
         limit: 50
       )
+      searchableTextByArticleId = Dictionary(uniqueKeysWithValues: articles.map { article in
+        let blob = [
+          article.title,
+          article.sourceName,
+          article.authorName ?? "",
+          article.displaySummary ?? "",
+          article.categoryNames.joined(separator: " "),
+        ].joined(separator: " ")
+        return (article.id, normalized(blob))
+      })
 
       let favoriteIds = Set(try feedSourceRepository.fetchFavorites().map(\.id))
       favoriteSourceArticles = articles.filter { favoriteIds.contains($0.sourceId) }.prefix(10).map { $0 }
-      trendingArticles = articles
-        .filter { $0.viewCount > 0 || $0.likeCount > 0 }
-        .sorted {
-          if $0.viewCount == $1.viewCount { return $0.likeCount > $1.likeCount }
-          return $0.viewCount > $1.viewCount
-        }
-        .prefix(10)
-        .map { $0 }
-      recentlySaved = try articleService.chronologicalFeed(
-        blockedKeywords: prefs.blockedKeywords,
-        blockedSourceIds: blockedSources
-      ).filter(\.isSaved).prefix(5).map { $0 }
+      recentlySaved = articles.filter(\.isSaved).prefix(5).map { $0 }
+      hasLoadedData = true
       performSearch()
+      rebuildDisplayedCaches()
     } catch {
       errorMessage = error.localizedDescription
     }
   }
 
+  func scheduleSearch() {
+    searchTask?.cancel()
+    searchTask = Task {
+      try? await Task.sleep(nanoseconds: Self.searchDebounceNanoseconds)
+      guard !Task.isCancelled else { return }
+      performSearch()
+    }
+  }
+
   func performSearch() {
-    guard !searchText.isEmpty else {
+    let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else {
       searchResults = []
+      rebuildDisplayedCaches()
       return
     }
-    searchResults = (try? searchService.search(query: searchText, unreadOnly: showUnreadOnly)) ?? []
+    let needle = normalized(trimmed)
+    let base = showUnreadOnly ? articles.filter { !$0.isRead } : articles
+    searchResults = base.filter { searchableTextByArticleId[$0.id, default: ""].contains(needle) }
+    rebuildDisplayedCaches()
+  }
+
+  private func rebuildDisplayedCaches() {
+    let base = searchText.isEmpty ? articles : searchResults
+    cachedDisplayedArticles = base.filter { article in
+      let matchesUnread = !showUnreadOnly || !article.isRead
+      let matchesStyle = selectedStyle == "Todas" || ContentStyleFilter.style(for: article) == selectedStyle
+      return matchesUnread && matchesStyle
+    }
+
+    let styles = Set(articles.map { ContentStyleFilter.style(for: $0) })
+    let ordered = ContentStyleFilter.orderedStyles
+    cachedStyleFilters = ["Todas"] + ordered.filter { styles.contains($0) }
+
+    cachedLatestArticles = cachedDisplayedArticles
+      .prefix(20)
+      .map { $0 }
+  }
+
+  private func normalized(_ text: String) -> String {
+    text.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+  }
+
+  func refreshIfStale() async {
+    guard shouldRefreshFeeds else { return }
+    await refresh()
   }
 
   func refresh() async {
@@ -85,10 +160,26 @@ final class TodayViewModel {
     defer { isLoading = false }
     do {
       _ = try await feedService.refreshAll()
-      load()
+      try? preferenceRepository.touchLastRefresh()
+      reload()
+      await loadWeather()
     } catch {
       errorMessage = error.localizedDescription
-      load()
+      reload()
     }
+  }
+
+  func loadWeather() async {
+    let prefs = try? preferenceRepository.getOrCreate()
+    let country = prefs?.homeCountry ?? NewsCountry.detected
+    weather = try? await weatherService.currentWeather(
+      for: country,
+      locationQuery: prefs?.weatherLocationQuery
+    )
+  }
+
+  private var shouldRefreshFeeds: Bool {
+    guard let last = try? preferenceRepository.getOrCreate().lastRefreshAt else { return true }
+    return Date().timeIntervalSince(last) >= Self.minRefreshInterval
   }
 }

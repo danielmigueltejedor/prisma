@@ -13,13 +13,20 @@ struct ArticleCard: View {
   var readingTimeMinutes: Int?
   var sourceSiteURL: String? = nil
   var sourceFeedURL: String? = nil
+  var platform: FeedPlatform = .news
+  var isLive: Bool = false
 
   var body: some View {
     HStack(alignment: .top, spacing: PrismaSpacing.sm) {
       VStack(alignment: .leading, spacing: PrismaSpacing.xs) {
         HStack(spacing: PrismaSpacing.xs) {
           if let sourceFeedURL {
-            SourceIconView(siteURL: sourceSiteURL, feedURL: sourceFeedURL, size: 16)
+            SourceIconView(
+              siteURL: sourceSiteURL,
+              feedURL: sourceFeedURL,
+              platform: platform,
+              size: 16
+            )
           }
           Text(sourceName)
             .font(PrismaTypography.caption())
@@ -39,6 +46,10 @@ struct ArticleCard: View {
             Text("\(readingTimeMinutes) min")
               .font(PrismaTypography.caption2())
               .foregroundStyle(PrismaColors.textTertiary)
+          }
+
+          if isLive {
+            LiveCoverageDot()
           }
         }
 
@@ -72,18 +83,13 @@ struct ArticleCard: View {
       Spacer(minLength: 0)
 
       if let imageURL {
-        AsyncImage(url: imageURL) { phase in
-          switch phase {
-          case .success(let image):
-            image
-              .resizable()
-              .aspectRatio(contentMode: .fill)
-          case .failure, .empty:
-            RoundedRectangle(cornerRadius: PrismaRadius.sm)
-              .fill(PrismaColors.elevatedSurface)
-          @unknown default:
-            EmptyView()
-          }
+        ArticleRemoteImage(url: imageURL, maxPixelSize: 160) { image in
+          image
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+        } placeholder: {
+          RoundedRectangle(cornerRadius: PrismaRadius.sm)
+            .fill(PrismaColors.elevatedSurface)
         }
         .frame(width: 72, height: 72)
         .clipShape(RoundedRectangle(cornerRadius: PrismaRadius.sm, style: .continuous))

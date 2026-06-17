@@ -13,7 +13,7 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "2MCWC43AWQ"
 
 targets:
   Prisma:
@@ -26,7 +26,6 @@ targets:
           - Info.plist
     resources:
       - path: Prisma/Resources
-      - path: Prisma/Configuration/StoreKitConfiguration.storekit
     info:
       path: Prisma/Info.plist
       properties:
@@ -38,6 +37,8 @@ targets:
           UIApplicationSupportsMultipleScenes: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         INFOPLIST_FILE: Prisma/Info.plist

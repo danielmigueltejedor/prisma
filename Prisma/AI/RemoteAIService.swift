@@ -38,6 +38,56 @@ struct RemoteAIService: AIService {
     return response.comparison
   }
 
+  func filterSameStoryArticleIDs(anchor: Article, candidates: [Article]) async throws -> [String] {
+    struct Response: Decodable { let articleIds: [String] }
+    struct Body: Encodable {
+      let anchor: ArticlePayload
+      let candidates: [ArticlePayload]
+    }
+    let response: Response = try await post(
+      path: "/v1/filter-same-story",
+      body: Body(anchor: ArticlePayload(article: anchor), candidates: candidates.map(ArticlePayload.init))
+    )
+    return response.articleIds
+  }
+
+  func compareSameStory(anchor: Article, relatedArticles: [Article]) async throws -> SameStoryComparisonDTO {
+    struct Response: Decodable {
+      let comparison: String
+      let unifiedStory: String?
+    }
+    struct Body: Encodable {
+      let anchor: ArticlePayload
+      let related: [ArticlePayload]
+    }
+    let response: Response = try await post(
+      path: "/v1/compare-story",
+      body: Body(anchor: ArticlePayload(article: anchor), related: relatedArticles.map(ArticlePayload.init))
+    )
+    return SameStoryComparisonDTO(
+      comparisonText: response.comparison,
+      unifiedStory: response.unifiedStory ?? response.comparison
+    )
+  }
+
+  func rankSimilarArticles(anchor: Article, candidates: [Article], limit: Int) async throws -> [String] {
+    struct Response: Decodable { let articleIds: [String] }
+    struct Body: Encodable {
+      let anchor: ArticlePayload
+      let candidates: [ArticlePayload]
+      let limit: Int
+    }
+    let response: Response = try await post(
+      path: "/v1/similar",
+      body: Body(
+        anchor: ArticlePayload(article: anchor),
+        candidates: candidates.map(ArticlePayload.init),
+        limit: limit
+      )
+    )
+    return response.articleIds
+  }
+
   func generateDailyBriefing(articles: [Article], preferences: UserPreference) async throws -> DailyBriefingDTO {
     struct Body: Encodable {
       let articles: [ArticlePayload]
@@ -51,6 +101,48 @@ struct RemoteAIService: AIService {
 
   func explainContext(article: Article) async throws -> ContextExplanationDTO {
     try await post(path: "/v1/context", body: ArticlePayload(article: article))
+  }
+
+  func translateArticle(
+    _ article: Article,
+    to targetLanguageCode: String,
+    sourceLanguage: String?
+  ) async throws -> TranslationDTO {
+    struct Body: Encodable {
+      let article: ArticlePayload
+      let targetLanguageCode: String
+      let sourceLanguageCode: String?
+    }
+    return try await post(
+      path: "/v1/translate",
+      body: Body(
+        article: ArticlePayload(article: article),
+        targetLanguageCode: targetLanguageCode,
+        sourceLanguageCode: sourceLanguage
+      )
+    )
+  }
+
+  func translatePlainTexts(
+    _ texts: [String],
+    to targetLanguageCode: String,
+    sourceLanguage: String?
+  ) async throws -> [String] {
+    struct Body: Encodable {
+      let texts: [String]
+      let targetLanguageCode: String
+      let sourceLanguageCode: String?
+    }
+    struct Response: Decodable { let translations: [String] }
+    let response: Response = try await post(
+      path: "/v1/translate-texts",
+      body: Body(
+        texts: texts,
+        targetLanguageCode: targetLanguageCode,
+        sourceLanguageCode: sourceLanguage
+      )
+    )
+    return response.translations
   }
 
   private func post<T: Decodable, B: Encodable>(path: String, body: B) async throws -> T {

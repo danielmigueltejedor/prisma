@@ -7,12 +7,15 @@
     "·" : {
 
     },
-    "%@/mes · %@/año" : {
+    "%lld" : {
+
+    },
+    "%lld / %lld" : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@/mes · %2$@/año"
+            "value" : "%1$lld / %2$lld"
           }
         }
       }
@@ -97,6 +100,38 @@
         }
       }
     },
+    "action.favorite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Like"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me gusta"
+          }
+        }
+      }
+    },
+    "action.readAloud" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read aloud"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer en voz alta"
+          }
+        }
+      }
+    },
     "action.refresh" : {
       "localizations" : {
         "en" : {
@@ -141,6 +176,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardar"
+          }
+        }
+      }
+    },
+    "action.share" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir"
+          }
+        }
+      }
+    },
+    "ai.appleIntelligence" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
           }
         }
       }
@@ -229,6 +296,39 @@
         }
       }
     },
+    "ai.unavailable.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI features need Apple Intelligence on a compatible device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las funciones de IA requieren Apple Intelligence en un dispositivo compatible."
+          }
+        }
+      }
+    },
+    "ai.unavailable.title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence no disponible"
+          }
+        }
+      }
+    },
     "app.loading" : {
       "localizations" : {
         "en" : {
@@ -309,6 +409,22 @@
         }
       }
     },
+    "article.live" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directo"
+          }
+        }
+      }
+    },
     "article.read" : {
       "localizations" : {
         "en" : {
@@ -337,6 +453,170 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardado"
+          }
+        }
+      }
+    },
+    "author.articleCount %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld articles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld artículos"
+          }
+        }
+      }
+    },
+    "author.empty.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh feeds to load articles by this author."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza las fuentes para cargar artículos de este autor."
+          }
+        }
+      }
+    },
+    "author.empty.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No articles yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin artículos aún"
+          }
+        }
+      }
+    },
+    "author.profile" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Author"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autor"
+          }
+        }
+      }
+    },
+    "author.sources %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Published in: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicado en: %@"
+          }
+        }
+      }
+    },
+    "cascade.comment" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comentar"
+          }
+        }
+      }
+    },
+    "cascade.comments" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comentarios"
+          }
+        }
+      }
+    },
+    "cascade.end" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've reached the end of your recommendations"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Has llegado al final de tus recomendaciones"
+          }
+        }
+      }
+    },
+    "cascade.next" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguiente"
+          }
+        }
+      }
+    },
+    "cascade.nextHint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swipe up for the next story"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza hacia arriba para la siguiente noticia"
           }
         }
       }
@@ -725,6 +1005,9 @@
         }
       }
     },
+    "error.network.responseTooLarge" : {
+
+    },
     "filter.unread" : {
       "localizations" : {
         "en" : {
@@ -737,6 +1020,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Solo sin leer"
+          }
+        }
+      }
+    },
+    "foryou.ai.personalized" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feed ordered by your reading"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feed ordenado según tu lectura"
           }
         }
       }
@@ -806,6 +1105,7 @@
       }
     },
     "foryou.localFeed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -822,6 +1122,7 @@
       }
     },
     "foryou.plus.message" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -838,6 +1139,7 @@
       }
     },
     "foryou.plus.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -858,13 +1160,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "For you (Prisma+)"
+            "value" : "Recommended for you"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Para ti (Prisma+)"
+            "value" : "Recomendado para ti"
           }
         }
       }
@@ -901,6 +1203,118 @@
         }
       }
     },
+    "intent.readNews.description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads your recommended news out loud"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lee en voz alta tus noticias recomendadas"
+          }
+        }
+      }
+    },
+    "intent.readNews.dialog" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading your recommended news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leyendo tus noticias recomendadas"
+          }
+        }
+      }
+    },
+    "intent.readNews.shortTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer noticias"
+          }
+        }
+      }
+    },
+    "intent.readNews.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read recommended news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer noticias recomendadas"
+          }
+        }
+      }
+    },
+    "intent.stopReading.description" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stops reading news aloud"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detiene la lectura en voz alta"
+          }
+        }
+      }
+    },
+    "intent.stopReading.shortTitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop reading"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener lectura"
+          }
+        }
+      }
+    },
+    "intent.stopReading.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop reading news"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener lectura de noticias"
+          }
+        }
+      }
+    },
     "loading.default" : {
       "localizations" : {
         "en" : {
@@ -913,6 +1327,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cargando…"
+          }
+        }
+      }
+    },
+    "onboarding.ai.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summaries, cross-source comparisons, daily briefings and smart clusters run on your iPhone with Apple Intelligence. Free, private, no subscription."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resúmenes, comparaciones entre fuentes, portadas del día y agrupaciones inteligentes se ejecutan en tu iPhone con Apple Intelligence. Gratis, privado, sin suscripción."
+          }
+        }
+      }
+    },
+    "onboarding.ai.subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On-device intelligence"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inteligencia en el dispositivo"
+          }
+        }
+      }
+    },
+    "onboarding.ai.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
           }
         }
       }
@@ -966,6 +1428,7 @@
       }
     },
     "onboarding.plus.body" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -982,6 +1445,7 @@
       }
     },
     "onboarding.plus.subtitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1093,6 +1557,22 @@
         }
       }
     },
+    "onboarding.start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar"
+          }
+        }
+      }
+    },
     "onboarding.welcome.body" : {
       "localizations" : {
         "en" : {
@@ -1110,6 +1590,7 @@
       }
     },
     "paywall.continueFree" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1126,6 +1607,7 @@
       }
     },
     "paywall.legal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1142,6 +1624,7 @@
       }
     },
     "paywall.restore" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1158,6 +1641,7 @@
       }
     },
     "paywall.startTrial" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1174,6 +1658,7 @@
       }
     },
     "paywall.subtitle" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1189,7 +1674,56 @@
         }
       }
     },
+    "platform.news" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "News"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticias"
+          }
+        }
+      }
+    },
+    "platform.reddit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddit"
+          }
+        }
+      }
+    },
+    "platform.x" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X"
+          }
+        }
+      }
+    },
     "plus.activate" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1206,6 +1740,7 @@
       }
     },
     "plus.active" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1222,6 +1757,7 @@
       }
     },
     "plus.feature.briefing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1238,6 +1774,7 @@
       }
     },
     "plus.feature.clustering" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1254,6 +1791,7 @@
       }
     },
     "plus.feature.compare" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1270,6 +1808,7 @@
       }
     },
     "plus.feature.notifications" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1286,6 +1825,7 @@
       }
     },
     "plus.feature.smartFeed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1302,6 +1842,7 @@
       }
     },
     "plus.feature.summary" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1318,6 +1859,7 @@
       }
     },
     "plus.feature.translation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1334,6 +1876,7 @@
       }
     },
     "plus.manageSubscription" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1350,6 +1893,7 @@
       }
     },
     "plus.status.active" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1366,6 +1910,7 @@
       }
     },
     "plus.status.free" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1382,6 +1927,7 @@
       }
     },
     "plus.status.trial" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1397,21 +1943,18 @@
         }
       }
     },
-    "Prisma+" : {
-
-    },
     "privacy.ads.body" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prisma is funded by optional Prisma+ subscriptions, not advertising."
+            "value" : "Prisma has no ads, subscriptions, or in-app purchases. The app is free and runs locally on your device."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prisma se financia con Prisma+ opcional, no con publicidad."
+            "value" : "Prisma no tiene anuncios, suscripciones ni compras integradas. La app es gratuita y funciona de forma local en tu dispositivo."
           }
         }
       }
@@ -1428,6 +1971,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin anuncios, nunca"
+          }
+        }
+      }
+    },
+    "privacy.ai.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI runs on your device with Apple Intelligence. Article text is not sent to Prisma servers."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA se ejecuta en tu dispositivo con Apple Intelligence. El texto de los artículos no se envía a servidores de Prisma."
+          }
+        }
+      }
+    },
+    "privacy.ai.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On-device AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA en el dispositivo"
           }
         }
       }
@@ -1497,6 +2072,7 @@
       }
     },
     "privacy.plus.body" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1513,6 +2089,7 @@
       }
     },
     "privacy.plus.title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1524,6 +2101,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prisma+ e IA"
+          }
+        }
+      }
+    },
+    "privacy.support.body" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you find Prisma useful, you can leave a voluntary tip. Donations are optional and help support development."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si te resulta útil Prisma, puedes dejar una propina voluntaria. Las donaciones son opcionales y ayudan a seguir desarrollando la app."
+          }
+        }
+      }
+    },
+    "privacy.support.donate" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy me a coffee"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invítame a un café"
+          }
+        }
+      }
+    },
+    "privacy.support.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support the project"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apoya el proyecto"
           }
         }
       }
@@ -1544,8 +2169,21 @@
         }
       }
     },
-    "Prueba gratis de %lld días" : {
-
+    "reader.aiDisclaimer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-generated content may contain errors. Verify important facts with the original sources."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El contenido generado por IA puede contener errores. Verifica los datos importantes en las fuentes originales."
+          }
+        }
+      }
     },
     "reader.aiSummary" : {
       "localizations" : {
@@ -1595,6 +2233,22 @@
         }
       }
     },
+    "reader.comparisonSearching" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking for the same story in other sources…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando la misma noticia en otras fuentes…"
+          }
+        }
+      }
+    },
     "reader.context" : {
       "localizations" : {
         "en" : {
@@ -1611,6 +2265,231 @@
         }
       }
     },
+    "reader.contextPreparing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing context explanation…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparando explicación de contexto…"
+          }
+        }
+      }
+    },
+    "reader.font.rounded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rounded"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redondeada"
+          }
+        }
+      }
+    },
+    "reader.font.serif" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serif"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serif"
+          }
+        }
+      }
+    },
+    "reader.font.system" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistema"
+          }
+        }
+      }
+    },
+    "reader.hideComparison" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide comparison"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar comparación"
+          }
+        }
+      }
+    },
+    "reader.hideContext" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide context"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar contexto"
+          }
+        }
+      }
+    },
+    "reader.hideSummary" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide summary"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar resumen"
+          }
+        }
+      }
+    },
+    "reader.imageLoadFailed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not load image"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo cargar la imagen"
+          }
+        }
+      }
+    },
+    "reader.live.empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for live updates from the feed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esperando actualizaciones en directo del feed."
+          }
+        }
+      }
+    },
+    "reader.live.highlight" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key moment"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Momento clave"
+          }
+        }
+      }
+    },
+    "reader.live.indicator" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live now"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En directo ahora"
+          }
+        }
+      }
+    },
+    "reader.live.refresh" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh live updates"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar en directo"
+          }
+        }
+      }
+    },
+    "reader.live.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live coverage"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En directo"
+          }
+        }
+      }
+    },
+    "reader.live.updated %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated at %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizado a las %@"
+          }
+        }
+      }
+    },
     "reader.noContent" : {
       "localizations" : {
         "en" : {
@@ -1623,6 +2502,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este artículo no incluye contenido en el feed."
+          }
+        }
+      }
+    },
+    "reader.openImage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open image"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir imagen"
+          }
+        }
+      }
+    },
+    "reader.openImageGalleryHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the image gallery"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la galería de imágenes"
+          }
+        }
+      }
+    },
+    "reader.openImageHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shows the image full screen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la imagen a pantalla completa"
           }
         }
       }
@@ -1677,6 +2604,7 @@
       }
     },
     "reader.readingModeActive" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1693,6 +2621,7 @@
       }
     },
     "reader.readingModeOff" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1709,6 +2638,7 @@
       }
     },
     "reader.readingModeOn" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1720,6 +2650,151 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modo lectura activo"
+          }
+        }
+      }
+    },
+    "reader.reddit.comments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comentarios"
+          }
+        }
+      }
+    },
+    "reader.reddit.invalidResponse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddit returned an unexpected response."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddit devolvió una respuesta inesperada."
+          }
+        }
+      }
+    },
+    "reader.reddit.invalidURL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not resolve this Reddit post."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo identificar esta publicación de Reddit."
+          }
+        }
+      }
+    },
+    "reader.reddit.loadingComments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading comments…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando comentarios…"
+          }
+        }
+      }
+    },
+    "reader.reddit.noComments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No comments to show."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay comentarios que mostrar."
+          }
+        }
+      }
+    },
+    "reader.sameTopicSources %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also covered by: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También en: %@"
+          }
+        }
+      }
+    },
+    "reader.showComparison" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compare sources"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparar fuentes"
+          }
+        }
+      }
+    },
+    "reader.showContext" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explain context"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Explicar contexto"
+          }
+        }
+      }
+    },
+    "reader.showSummary" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show summary"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar resumen"
           }
         }
       }
@@ -1736,6 +2811,230 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sigue leyendo"
+          }
+        }
+      }
+    },
+    "reader.similar.loading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finding related articles…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando artículos relacionados…"
+          }
+        }
+      }
+    },
+    "reader.summaryPreparing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing summary…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparando resumen…"
+          }
+        }
+      }
+    },
+    "reader.translatedTo %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translated to %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traducido al %@"
+          }
+        }
+      }
+    },
+    "reader.translating" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translating in background…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Traduciendo en segundo plano…"
+          }
+        }
+      }
+    },
+    "reader.translationPending" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translation will appear when ready."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La traducción aparecerá cuando esté lista."
+          }
+        }
+      }
+    },
+    "reader.typography.decrease" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decrease text size"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reducir tamaño"
+          }
+        }
+      }
+    },
+    "reader.typography.font" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Font"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fuente"
+          }
+        }
+      }
+    },
+    "reader.typography.increase" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Increase text size"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aumentar tamaño"
+          }
+        }
+      }
+    },
+    "reader.typography.menu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Typography"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tipografía"
+          }
+        }
+      }
+    },
+    "reader.typography.size" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamaño"
+          }
+        }
+      }
+    },
+    "reader.typography.sizeValue %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current size: %lld%%"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamaño actual: %lld%%"
+          }
+        }
+      }
+    },
+    "reader.unifiedStory" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unified story"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noticia unificada"
+          }
+        }
+      }
+    },
+    "reader.viewOriginal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View original"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver original"
+          }
+        }
+      }
+    },
+    "reader.viewTranslation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View translation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver traducción"
           }
         }
       }
@@ -1772,18 +3071,50 @@
         }
       }
     },
-    "saved.empty.message" : {
+    "saved.empty.favorites.message" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Save articles to read later."
+            "value" : "Like articles in cascade mode or the reader to find them here."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Guarda artículos para leerlos más tarde."
+            "value" : "Dale me gusta en el modo cascada o el lector para verlas aquí."
+          }
+        }
+      }
+    },
+    "saved.empty.favorites.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No likes yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin me gusta"
+          }
+        }
+      }
+    },
+    "saved.empty.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmark articles to read them later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marca artículos para leerlos más tarde."
           }
         }
       }
@@ -1805,6 +3136,7 @@
       }
     },
     "saved.filter" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1820,21 +3152,18 @@
         }
       }
     },
-    "saved.filter.all" : {
-
-    },
     "saved.filter.favorites" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favorites"
+            "value" : "Likes"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favoritos"
+            "value" : "Me gusta"
           }
         }
       }
@@ -1844,13 +3173,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saved"
+            "value" : "Bookmarks"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Guardados"
+            "value" : "Marcadores"
           }
         }
       }
@@ -1871,6 +3200,70 @@
         }
       }
     },
+    "search.mode.hint.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type to search your news feed from the top."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe para buscar en tus noticias desde arriba."
+          }
+        }
+      }
+    },
+    "search.mode.hint.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar"
+          }
+        }
+      }
+    },
+    "search.noResults.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another term or adjust your filters."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba con otro término o ajusta los filtros."
+          }
+        }
+      }
+    },
+    "search.noResults.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin resultados"
+          }
+        }
+      }
+    },
     "search.prompt" : {
       "localizations" : {
         "en" : {
@@ -1887,6 +3280,22 @@
         }
       }
     },
+    "search.results.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Results"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resultados"
+          }
+        }
+      }
+    },
     "settings.about" : {
       "localizations" : {
         "en" : {
@@ -1899,6 +3308,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Acerca de"
+          }
+        }
+      }
+    },
+    "settings.ai.active" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready — summaries and smart feeds run on this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista — resúmenes y feeds inteligentes se ejecutan en este dispositivo."
+          }
+        }
+      }
+    },
+    "settings.ai.section" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Intelligence"
+          }
+        }
+      }
+    },
+    "settings.ai.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On-device AI"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IA en el dispositivo"
+          }
+        }
+      }
+    },
+    "settings.ai.unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not available on this device."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No disponible en este dispositivo."
           }
         }
       }
@@ -1951,6 +3424,54 @@
         }
       }
     },
+    "settings.cascadeView" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cascade view"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vista en cascada"
+          }
+        }
+      }
+    },
+    "settings.cascadeView.beta" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        }
+      }
+    },
+    "settings.cascadeView.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full-screen vertical feed that learns from your likes and reading time to improve recommendations faster."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feed vertical a pantalla completa que aprende de tus likes y tiempo de lectura para mejorar las recomendaciones más rápido."
+          }
+        }
+      }
+    },
     "settings.clearData" : {
       "localizations" : {
         "en" : {
@@ -1979,6 +3500,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Datos"
+          }
+        }
+      }
+    },
+    "settings.experiments" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experiments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Experimentos"
           }
         }
       }
@@ -2095,6 +3632,54 @@
         }
       }
     },
+    "settings.siriReading" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siri reading"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lectura con Siri"
+          }
+        }
+      }
+    },
+    "settings.siriReading.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Say “Hey Siri, read my news in Prisma” to hear your recommended stories."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di «Oye Siri, leer noticias en Prisma» para escuchar tus noticias recomendadas."
+          }
+        }
+      }
+    },
+    "settings.terms" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of use"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Términos de uso"
+          }
+        }
+      }
+    },
     "settings.theme" : {
       "localizations" : {
         "en" : {
@@ -2139,6 +3724,214 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Versión"
+          }
+        }
+      }
+    },
+    "settings.weatherLocation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localización del tiempo"
+          }
+        }
+      }
+    },
+    "settings.weatherLocationFound %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location found: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localización encontrada: %@"
+          }
+        }
+      }
+    },
+    "settings.weatherLocationHint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "City or town for the weather chip (e.g. Madrid). No GPS permission needed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ciudad para el chip del tiempo (p. ej. Madrid). No hace falta permiso de ubicación."
+          }
+        }
+      }
+    },
+    "settings.weatherLocationNotFound" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not found. Check the spelling or try a nearby city."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontró esa localización. Revisa el nombre o prueba una ciudad cercana."
+          }
+        }
+      }
+    },
+    "settings.weatherLocationSearching" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looking up location…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscando localización…"
+          }
+        }
+      }
+    },
+    "source.articleCount %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld articles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld artículos"
+          }
+        }
+      }
+    },
+    "source.description.news %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest articles from %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Últimos artículos de %@."
+          }
+        }
+      }
+    },
+    "source.description.reddit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posts from this Reddit community, synced via native RSS."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicaciones de esta comunidad de Reddit, sincronizadas vía RSS nativo."
+          }
+        }
+      }
+    },
+    "source.description.x" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posts from this X account or trend list, delivered via RSS bridge."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Publicaciones de esta cuenta o tendencia en X, entregadas vía puente RSS."
+          }
+        }
+      }
+    },
+    "source.empty.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh to fetch the latest posts from this source."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza para obtener las últimas publicaciones de esta fuente."
+          }
+        }
+      }
+    },
+    "source.empty.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No articles yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin artículos aún"
+          }
+        }
+      }
+    },
+    "source.lastUpdated %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizado %@"
+          }
+        }
+      }
+    },
+    "source.x.bridgeNotice" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X has no official RSS. These feeds use a public bridge and may be slower or unavailable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X no tiene RSS oficial. Estas fuentes usan un puente público y pueden ser más lentas o no estar disponibles."
           }
         }
       }
@@ -2400,6 +4193,22 @@
         }
       }
     },
+    "sources.reddit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reddit"
+          }
+        }
+      }
+    },
     "sources.rename" : {
       "localizations" : {
         "en" : {
@@ -2428,6 +4237,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buscar fuentes"
+          }
+        }
+      }
+    },
+    "sources.search.mode.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type to find a source by name or URL."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe para encontrar una fuente por nombre o URL."
+          }
+        }
+      }
+    },
+    "sources.social" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X (Twitter)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "X (Twitter)"
           }
         }
       }
@@ -2636,6 +4477,69 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardados recientemente"
+          }
+        }
+      }
+    },
+    "today.weather.accessibility %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's weather, %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo hoy, %@"
+          }
+        }
+      }
+    },
+    "today.weather.accessibility.location %@ %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "today.weather.accessibility.location %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "today.weather.accessibility.location %1$@ %2$@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather in %2$@, %1$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo en %2$@, %1$@"
+          }
+        }
+      }
+    },
+    "u/%@" : {
+
+    },
+    "weather.location.default %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default (%@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Predeterminada (%@)"
           }
         }
       }

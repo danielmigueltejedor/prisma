@@ -10,9 +10,19 @@ struct PrismaApp: App {
     do {
       container = try PrismaModelContainer.make()
     } catch {
-      fatalError("Failed to create ModelContainer: \(error)")
+      PrismaModelContainer.resetPersistentStore()
+      do {
+        container = try PrismaModelContainer.make()
+      } catch {
+        do {
+          container = try PrismaModelContainer.make(inMemory: true)
+        } catch {
+          fatalError("Failed to create any ModelContainer: \(error)")
+        }
+      }
     }
     dependencies = AppDependencies(modelContainer: container)
+    NewsSpeechBridge.dependencies = dependencies
   }
 
   var body: some Scene {
