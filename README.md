@@ -6,8 +6,8 @@ Lector RSS premium para iOS. Sin anuncios. Local-first. Prisma+ opcional para IA
 
 ## Requisitos
 
-- Xcode 15+
-- iOS 17+
+- Xcode 26+ (SDK Foundation Models)
+- iOS 26+ en **iPhone 15 Pro o posterior** (Apple Intelligence)
 - macOS para compilar
 
 ## Abrir el proyecto

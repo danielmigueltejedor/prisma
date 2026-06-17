@@ -64,7 +64,7 @@ struct NetworkClient {
     case .x:
       "Mozilla/5.0 (compatible; PrismaRSS/1.0; +https://prisma.app)"
     case .news:
-      "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
     }
   }
 }

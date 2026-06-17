@@ -21,6 +21,7 @@
 		161572EFE58B64909495487A /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98066D28D28723FBF752DFE /* SettingsViewModel.swift */; };
 		161B6CE665A35579C20DEDEE /* FoundationModelsAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07440B8A2E8346A6ABDD6302 /* FoundationModelsAIService.swift */; };
 		175A47163C55DED210B3861D /* StyleFilterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2770AA4F1E1016B4D48B907E /* StyleFilterBar.swift */; };
+		TABRETAPBUILD001 /* TabBarReTapDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = TABRETAPREF001 /* TabBarReTapDetector.swift */; };
 		SAVEDLIBFILTER001BUILD /* SavedLibraryFilterBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = SAVEDLIBFILTER002REF /* SavedLibraryFilterBar.swift */; };
 		186AE9ED8A7C7A621D58985A /* RecommendationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB837A1AF6955086C29A840 /* RecommendationEngineTests.swift */; };
 		199FFD3B4A7EB0B3167D36F0 /* PrismaDismissButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D0C0D45D1E66FFD68F1CBD /* PrismaDismissButton.swift */; };
@@ -202,6 +203,7 @@
 		1D9C4723C41150BF8CCBFC14 /* GlassBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassBackground.swift; sourceTree = "<group>"; };
 		27327471CFAB5C901452F4F5 /* AuthorProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthorProfile.swift; sourceTree = "<group>"; };
 		2770AA4F1E1016B4D48B907E /* StyleFilterBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleFilterBar.swift; sourceTree = "<group>"; };
+		TABRETAPREF001 /* TabBarReTapDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarReTapDetector.swift; sourceTree = "<group>"; };
 		SAVEDLIBFILTER002REF /* SavedLibraryFilterBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedLibraryFilterBar.swift; sourceTree = "<group>"; };
 		2B3DD5CA72DE0BC2FB4047FC /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		2DF14A07747DD62D8AC9256E /* CollectionRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionRepository.swift; sourceTree = "<group>"; };
@@ -734,6 +736,7 @@
 				A8SHARE01234567890ABCDEF /* ShareSheet.swift */,
 				9E7E63532E438E5D011392FB /* SourceIconView.swift */,
 				2770AA4F1E1016B4D48B907E /* StyleFilterBar.swift */,
+				TABRETAPREF001 /* TabBarReTapDetector.swift */,
 				SAVEDLIBFILTER002REF /* SavedLibraryFilterBar.swift */,
 				0007848837E17DF9DC940FDB /* TranslatedArticleCard.swift */,
 			);
@@ -1004,6 +1007,7 @@
 				C83025D9DAFBDBD9B9A5D68A /* SourcesView.swift in Sources */,
 				F0E6557960833D5999B93FAA /* SourcesViewModel.swift in Sources */,
 				175A47163C55DED210B3861D /* StyleFilterBar.swift in Sources */,
+				TABRETAPBUILD001 /* TabBarReTapDetector.swift in Sources */,
 				SAVEDLIBFILTER001BUILD /* SavedLibraryFilterBar.swift in Sources */,
 				006CFAC35A1378D32849BD3B /* SummaryDTO.swift in Sources */,
 				C1AC63826B2F7CFF87282603 /* TodayView.swift in Sources */,
@@ -1180,7 +1184,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -1244,7 +1248,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;

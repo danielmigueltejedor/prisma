@@ -200,7 +200,7 @@ class XcodeProject:
             "INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;",
             "INFOPLIST_KEY_UILaunchScreen_Generation = YES;",
             "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;",
-            "IPHONEOS_DEPLOYMENT_TARGET = 17.0;",
+            "IPHONEOS_DEPLOYMENT_TARGET = 26.0;",
             'LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks");',
             "MARKETING_VERSION = 1.0;",
             "PRODUCT_BUNDLE_IDENTIFIER = com.prisma.app;",
@@ -256,7 +256,7 @@ class XcodeProject:
                     "CODE_SIGN_STYLE = Automatic;",
                     "CURRENT_PROJECT_VERSION = 1;",
                     "GENERATE_INFOPLIST_FILE = YES;",
-                    "IPHONEOS_DEPLOYMENT_TARGET = 17.0;",
+                    "IPHONEOS_DEPLOYMENT_TARGET = 26.0;",
                     "MARKETING_VERSION = 1.0;",
                     "PRODUCT_BUNDLE_IDENTIFIER = com.prisma.app.tests;",
                     'PRODUCT_NAME = "$(TARGET_NAME)";',
@@ -274,7 +274,7 @@ class XcodeProject:
                     "ALWAYS_SEARCH_USER_PATHS = NO;",
                     "CLANG_ENABLE_MODULES = YES;",
                     "COPY_PHASE_STRIP = NO;",
-                    "IPHONEOS_DEPLOYMENT_TARGET = 17.0;",
+                    "IPHONEOS_DEPLOYMENT_TARGET = 26.0;",
                     "SDKROOT = iphoneos;",
                     "SWIFT_VERSION = 5.0;",
                 ]),
@@ -626,7 +626,7 @@ def write_simple_project() -> None:
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -669,7 +669,7 @@ def write_simple_project() -> None:
         w("\t\t\t\tCODE_SIGN_STYLE = Automatic;")
         w("\t\t\t\tCURRENT_PROJECT_VERSION = 1;")
         w("\t\t\t\tGENERATE_INFOPLIST_FILE = YES;")
-        w("\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;")
+        w("\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 26.0;")
         w("\t\t\t\tMARKETING_VERSION = 1.0;")
         w("\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.prisma.app.tests;")
         w('\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";')
@@ -687,7 +687,7 @@ def write_simple_project() -> None:
         w("\t\t\t\tALWAYS_SEARCH_USER_PATHS = NO;")
         w("\t\t\t\tCLANG_ENABLE_MODULES = YES;")
         w("\t\t\t\tCOPY_PHASE_STRIP = NO;")
-        w("\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;")
+        w("\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 26.0;")
         w("\t\t\t\tSDKROOT = iphoneos;")
         w("\t\t\t\tSWIFT_VERSION = 5.0;")
         w("\t\t\t};")

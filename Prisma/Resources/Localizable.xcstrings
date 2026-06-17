@@ -218,13 +218,29 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This device doesn't support Apple Intelligence."
+            "value" : "This device doesn't support Apple Intelligence. Requires iPhone 15 Pro or later."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este dispositivo no admite Apple Intelligence."
+            "value" : "Este dispositivo no admite Apple Intelligence. Requiere iPhone 15 Pro o posterior."
+          }
+        }
+      }
+    },
+    "ai.requirements.devices" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requires iPhone 15 Pro or later with iOS 26+ and Apple Intelligence enabled."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Requiere iPhone 15 Pro o posterior con iOS 26+ y Apple Intelligence activado."
           }
         }
       }

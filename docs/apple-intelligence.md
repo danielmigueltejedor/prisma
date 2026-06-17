@@ -109,9 +109,9 @@ Recomendación: opción 1 — alinea con “local-first” y diferencia Prisma+ 
 
 ## Deployment target
 
-- Prisma sigue en **iOS 17** como mínimo.
-- Código Foundation Models envuelto en `#if canImport(FoundationModels)` + `@available(iOS 26.0, *)`.
-- En iOS 17–25: MockAIService o heurísticas locales existentes.
+- Prisma requiere **iOS 26+** en **iPhone 15 Pro o posterior** (dispositivos con Apple Intelligence).
+- Código Foundation Models en `#if canImport(FoundationModels)` + `@available(iOS 26.0, *)`.
+- Simulador o hardware sin IA: fallback a `MockAIService` para desarrollo.
 
 ## Xcode / simulador
 

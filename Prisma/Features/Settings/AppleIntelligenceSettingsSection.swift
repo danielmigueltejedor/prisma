@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AppleIntelligenceSettingsSection: View {
   var body: some View {
-    Section(String(localized: "settings.ai.section")) {
+    Section {
       HStack(spacing: PrismaSpacing.sm) {
         Image(systemName: "apple.intelligence")
           .foregroundStyle(PrismaColors.accentFallback)
@@ -14,6 +14,14 @@ struct AppleIntelligenceSettingsSection: View {
             .foregroundStyle(PrismaColors.textSecondary)
         }
       }
+
+      if !AIServiceFactory.hasFreeOnDeviceAI {
+        Text(AppleIntelligenceAvailability.deviceRequirementsDescription)
+          .font(PrismaTypography.caption2())
+          .foregroundStyle(PrismaColors.textTertiary)
+      }
+    } header: {
+      Text(String(localized: "settings.ai.section"))
     }
   }
 

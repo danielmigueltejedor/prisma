@@ -33,18 +33,25 @@ struct ForYouView: View {
       .toolbar(viewModel.cascadeViewEnabled ? .hidden : .visible, for: .navigationBar)
       .onAppear {
         viewModel.loadIfNeeded()
-        previewStore.refresh(for: viewModel.articles)
+        refreshPreviewsIfNeeded()
+      }
+      .onChange(of: viewModel.listFeedRefreshToken) { _, _ in
+        refreshPreviewsIfNeeded()
       }
       .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
         viewModel.handleFeedsRefreshed()
-        previewStore.refresh(for: viewModel.articles)
+        refreshPreviewsIfNeeded()
       }
       .onReceive(NotificationCenter.default.publisher(for: .articleLibraryDidChange)) { _ in
         viewModel.handleLibraryChanged()
-        previewStore.refresh(for: viewModel.articles)
       }
       .onReceive(NotificationCenter.default.publisher(for: .preferencesDidChange)) { _ in
         viewModel.handlePreferencesChanged()
+      }
+      .background {
+        TabBarReTapDetector(selectedIndex: 1) {
+          viewModel.refreshFromTabReTap()
+        }
       }
       .overlay {
         if !viewModel.cascadeViewEnabled, viewModel.isLoadingAI, viewModel.clusters.isEmpty {
@@ -70,29 +77,45 @@ struct ForYouView: View {
   }
 
   private var listFeed: some View {
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: PrismaSpacing.lg) {
-        if !viewModel.clusters.isEmpty {
-          sectionHeader(String(localized: "foryou.clusters"))
-          ForEach(viewModel.clusters, id: \.id) { cluster in
-            Button { selectedCluster = cluster } label: {
-              clusterCard(cluster)
+    ScrollViewReader { proxy in
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: PrismaSpacing.lg) {
+          Color.clear.frame(height: 0).id("foryou-list-top")
+
+          if !viewModel.clusters.isEmpty {
+            sectionHeader(String(localized: "foryou.clusters"))
+            ForEach(viewModel.clusters, id: \.id) { cluster in
+              Button { selectedCluster = cluster } label: {
+                clusterCard(cluster)
+              }
+              .buttonStyle(.plain)
+            }
+          }
+
+          sectionHeader(String(localized: "foryou.smartFeed"))
+
+          ForEach(viewModel.articles.prefix(30), id: \.id) { article in
+            Button { onSelectArticle(article) } label: {
+              TranslatedArticleCard(article: article, previewStore: previewStore)
             }
             .buttonStyle(.plain)
           }
         }
-
-        sectionHeader(String(localized: "foryou.smartFeed"))
-
-        ForEach(viewModel.articles.prefix(30), id: \.id) { article in
-          Button { onSelectArticle(article) } label: {
-            TranslatedArticleCard(article: article, previewStore: previewStore)
-          }
-          .buttonStyle(.plain)
+        .padding(PrismaSpacing.md)
+      }
+      .onChange(of: viewModel.listFeedRefreshToken) { _, _ in
+        withAnimation(.easeOut(duration: 0.2)) {
+          proxy.scrollTo("foryou-list-top", anchor: .top)
         }
       }
-      .padding(PrismaSpacing.md)
     }
+  }
+
+  private func refreshPreviewsIfNeeded() {
+    let ids = viewModel.articles.prefix(30).map(\.id)
+    guard ids != lastPreviewArticleIDs else { return }
+    lastPreviewArticleIDs = ids
+    previewStore.refresh(for: viewModel.articles)
   }
 
   private func clusterCard(_ cluster: ClusterDTO) -> some View {

@@ -4,6 +4,8 @@ enum AppConfiguration {
   static let appName = "Prisma"
   static let tagline = String(localized: "app.tagline")
   static let bundleIdentifier = "com.danielmigueltejedor.prisma"
+  /// Versión mínima de iOS (Foundation Models / Apple Intelligence).
+  static let minimumIOSVersion = "26.0"
   static let supportEmail = "support@prisma.app"
   static let privacyPolicyURL = URL(string: "https://prisma.app/privacy")!
   static let termsURL = URL(string: "https://prisma.app/terms")!

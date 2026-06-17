@@ -23,6 +23,11 @@ enum AppleIntelligenceAvailability: Equatable, Sendable {
     }
   }
 
+  /// Requisitos de hardware documentados para Apple Intelligence.
+  static var deviceRequirementsDescription: String {
+    String(localized: "ai.requirements.devices")
+  }
+
   static var current: AppleIntelligenceAvailability {
     #if canImport(FoundationModels)
     if #available(iOS 26.0, *) {

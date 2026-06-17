@@ -129,13 +129,6 @@ struct MainTabView: View {
       Task { await todayViewModel.loadWeather() }
     }
     .tint(PrismaColors.accentFallback)
-    .background {
-      TabBarReTapDetector(selectedIndex: 1) {
-        if selectedTab == 1 {
-          forYouViewModel.refreshFromTabReTap()
-        }
-      }
-    }
     .sheet(item: $selectedArticle) { article in
       if let readerViewModel {
         ArticleReaderView(

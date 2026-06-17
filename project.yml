@@ -2,7 +2,7 @@ name: Prisma
 options:
   bundleIdPrefix: com.danielmigueltejedor
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"
   developmentLanguage: es
   xcodeVersion: "15.0"
   createIntermediateGroups: true
