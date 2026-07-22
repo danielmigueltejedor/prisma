@@ -9,6 +9,7 @@ final class FeedService {
   private let articleRepository: ArticleRepository
   private let feedDownloader: FeedDownloader
   private let parser: FeedParserProtocol
+  private var inFlightRefresh: Task<Result<Int, Error>, Never>?
 
   init(
     feedSourceRepository: FeedSourceRepository,
@@ -23,63 +24,119 @@ final class FeedService {
   }
 
   func refreshAll() async throws -> Int {
-    let sources = try feedSourceRepository.fetchEnabled()
-    guard !sources.isEmpty else { return 0 }
+    try await serializedRefresh {
+      let sources = try self.feedSourceRepository.fetchEnabled()
+      guard !sources.isEmpty else { return 0 }
 
-    var totalNew = 0
-    for chunk in sources.chunked(into: Self.maxConcurrentRefreshes) {
-      try await withThrowingTaskGroup(of: Int.self) { group in
-        for source in chunk {
-          group.addTask { [self] in
-            try await self.refresh(source: source, save: false)
+      var totalNew = 0
+      for chunk in sources.chunked(into: Self.maxConcurrentRefreshes) {
+        try await withThrowingTaskGroup(of: Int.self) { group in
+          for source in chunk {
+            group.addTask { [self] in
+              try await self.refresh(source: source, save: false)
+            }
+          }
+          for try await count in group {
+            totalNew += count
           }
         }
-        for try await count in group {
-          totalNew += count
-        }
       }
+      try self.articleRepository.save()
+      FeedRefreshNotifier.publish()
+      return totalNew
     }
-    try articleRepository.save()
-    FeedRefreshNotifier.publish()
-    return totalNew
   }
 
   /// Refresca todas las fuentes activas sin abortar si alguna falla (arranque en frío).
   @discardableResult
   func refreshAllLenient() async -> Int {
     let sources = (try? feedSourceRepository.fetchEnabled()) ?? []
-    guard !sources.isEmpty else { return 0 }
+    return await refreshSourcesLenient(sources)
+  }
 
-    var totalNew = 0
-    for chunk in sources.chunked(into: Self.maxConcurrentRefreshes) {
-      await withTaskGroup(of: Int.self) { group in
-        for source in chunk {
-          group.addTask { [self] in
-            return await self.refreshIgnoringErrors(source: source, save: false)
+  @discardableResult
+  func refreshSourcesLenient(_ sources: [FeedSource], publishNotification: Bool = true) async -> Int {
+    await serializedRefreshLenient {
+      guard !sources.isEmpty else { return 0 }
+
+      var totalNew = 0
+      for chunk in sources.chunked(into: Self.maxConcurrentRefreshes) {
+        await withTaskGroup(of: Int.self) { group in
+          for source in chunk {
+            group.addTask { [self] in
+              await self.refreshIgnoringErrors(source: source, save: false)
+            }
+          }
+          for await count in group {
+            totalNew += count
           }
         }
-        for await count in group {
-          totalNew += count
-        }
+        await Task.yield()
       }
+      _ = try? self.articleRepository.save()
+      if publishNotification {
+        FeedRefreshNotifier.publish()
+      }
+      return totalNew
     }
-    _ = try? articleRepository.save()
-    FeedRefreshNotifier.publish()
-    return totalNew
   }
 
   @discardableResult
   func refreshEnabledWithoutFetchedData() async -> Int {
-    let pending = (try? feedSourceRepository.fetchEnabled())?.filter { $0.lastFetchedAt == nil } ?? []
-    guard !pending.isEmpty else { return 0 }
+    await serializedRefreshLenient {
+      let pending = (try? self.feedSourceRepository.fetchEnabled())?.filter { $0.lastFetchedAt == nil } ?? []
+      guard !pending.isEmpty else { return 0 }
 
-    var totalNew = 0
-    for source in pending {
-      totalNew += await refreshIgnoringErrors(source: source, save: false)
+      var totalNew = 0
+      for chunk in pending.chunked(into: Self.maxConcurrentRefreshes) {
+        await withTaskGroup(of: Int.self) { group in
+          for source in chunk {
+            group.addTask { [self] in
+              await self.refreshIgnoringErrors(source: source, save: false)
+            }
+          }
+          for await count in group {
+            totalNew += count
+          }
+        }
+        await Task.yield()
+      }
+      _ = try? self.articleRepository.save()
+      FeedRefreshNotifier.publish()
+      return totalNew
     }
-    _ = try? articleRepository.save()
-    FeedRefreshNotifier.publish()
-    return totalNew
+  }
+
+  private func serializedRefresh(
+    _ operation: @escaping @MainActor () async throws -> Int
+  ) async throws -> Int {
+    if let inFlightRefresh {
+      return try await inFlightRefresh.value.get()
+    }
+    let task = Task { @MainActor () -> Result<Int, Error> in
+      do {
+        return .success(try await operation())
+      } catch {
+        return .failure(error)
+      }
+    }
+    inFlightRefresh = task
+    defer { inFlightRefresh = nil }
+    return try await task.value.get()
+  }
+
+  private func serializedRefreshLenient(
+    _ operation: @escaping @MainActor () async -> Int
+  ) async -> Int {
+    if let inFlightRefresh {
+      return (try? await inFlightRefresh.value.get()) ?? 0
+    }
+    let task = Task { @MainActor () -> Result<Int, Error> in
+      .success(await operation())
+    }
+    inFlightRefresh = task
+    defer { inFlightRefresh = nil }
+    return (try? await task.value.get()) ?? 0
   }
 
   @discardableResult
@@ -172,13 +229,7 @@ final class FeedService {
       imported += 1
     }
 
-    for source in sourcesToRefresh {
-      _ = await refreshIgnoringErrors(source: source)
-    }
-
-    if imported > 0 {
-      FeedRefreshNotifier.publish()
-    }
+    _ = await refreshSourcesLenient(sourcesToRefresh, publishNotification: imported > 0)
     return imported
   }
 

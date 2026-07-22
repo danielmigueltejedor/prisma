@@ -47,6 +47,24 @@ struct BriefingSection: Codable, Sendable {
   let articleIds: [String]
 }
 
+extension DailyBriefingDTO {
+  static func from(clusters: [ClusterDTO]) -> DailyBriefingDTO? {
+    guard !clusters.isEmpty else { return nil }
+    let sections = clusters.prefix(4).map { cluster in
+      BriefingSection(
+        headline: cluster.title,
+        summary: cluster.synthesizedStory ?? cluster.summary ?? "",
+        articleIds: cluster.articleIds
+      )
+    }
+    return DailyBriefingDTO(
+      title: "Tu portada de hoy",
+      sections: Array(sections),
+      generatedAt: .now
+    )
+  }
+}
+
 struct ContextExplanationDTO: Codable, Sendable {
   let articleId: String
   let explanation: String

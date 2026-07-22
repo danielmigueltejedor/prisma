@@ -2,22 +2,34 @@ import SwiftUI
 
 struct OnboardingView: View {
   @Bindable var viewModel: OnboardingViewModel
+  @FocusState private var searchFocused: Bool
 
   var body: some View {
     PrismaScreen {
       VStack(spacing: 0) {
-        Group {
-          switch viewModel.currentPage {
-          case 0: welcomePage
-          case 1: countryPage
-          case 2: sourcesPage
-          case 3: privacyPage
-          case 4: aiPage
-          default: welcomePage
+        TabView(selection: $viewModel.currentPage) {
+          welcomePage
+            .tag(0)
+
+          countryPage
+            .tag(1)
+
+          sourcesPage
+            .tag(2)
+
+          privacyPage
+            .tag(3)
+
+          aiPage
+            .tag(4)
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onChange(of: viewModel.currentPage) { oldPage, newPage in
+          if newPage == 2, oldPage != 2 {
+            viewModel.prepareSourcesPage()
           }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: viewModel.currentPage)
 
         pageIndicator
           .padding(.bottom, PrismaSpacing.sm)
@@ -57,13 +69,8 @@ struct OnboardingView: View {
   }
 
   private var sourcesPage: some View {
-    VStack(spacing: PrismaSpacing.md) {
-      VStack(spacing: PrismaSpacing.xs) {
-        Image(systemName: "antenna.radiowaves.left.and.right")
-          .font(.system(size: 44))
-          .foregroundStyle(PrismaColors.accentFallback)
-          .padding(.top, PrismaSpacing.lg)
-
+    VStack(spacing: PrismaSpacing.sm) {
+      VStack(spacing: PrismaSpacing.xxs) {
         Text(String(localized: "onboarding.sources.title"))
           .font(PrismaTypography.title(.semibold))
           .multilineTextAlignment(.center)
@@ -73,29 +80,83 @@ struct OnboardingView: View {
           .foregroundStyle(PrismaColors.textSecondary)
           .multilineTextAlignment(.center)
 
-        Text(String(localized: "onboarding.sources.pick"))
-          .font(PrismaTypography.caption())
-          .foregroundStyle(PrismaColors.textTertiary)
-          .multilineTextAlignment(.center)
-          .padding(.horizontal, PrismaSpacing.lg)
+        Text(viewModel.selectedCountLabel)
+          .font(PrismaTypography.caption(.semibold))
+          .foregroundStyle(PrismaColors.accentFallback)
       }
+      .padding(.horizontal, PrismaSpacing.lg)
+      .padding(.top, PrismaSpacing.md)
 
-      ScrollView {
-        LazyVStack(spacing: PrismaSpacing.sm) {
-          ForEach(viewModel.suggestedFeeds) { feed in
-            onboardingFeedRow(feed)
-          }
-        }
+      sourcesSearchField
         .padding(.horizontal, PrismaSpacing.lg)
+
+      StyleFilterBar(
+        filters: viewModel.styleFilters,
+        selection: $viewModel.selectedStyle
+      )
+
+      if viewModel.displayedFeeds.isEmpty {
+        Spacer(minLength: PrismaSpacing.md)
+        EmptyStateView(
+          icon: "magnifyingglass",
+          title: String(localized: "search.noResults.title"),
+          message: viewModel.isSearching
+            ? String(localized: "search.noResults.message")
+            : String(localized: "onboarding.sources.emptyFilter")
+        )
+        .padding(.horizontal, PrismaSpacing.lg)
+        Spacer()
+      } else {
+        ScrollView {
+          LazyVStack(spacing: PrismaSpacing.sm) {
+            ForEach(viewModel.displayedFeeds) { feed in
+              onboardingFeedRow(feed)
+            }
+          }
+          .padding(.horizontal, PrismaSpacing.lg)
+          .padding(.bottom, PrismaSpacing.md)
+        }
+        .scrollDismissesKeyboard(.interactively)
       }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .onAppear {
+      viewModel.prepareSourcesPage()
+    }
+  }
+
+  private var sourcesSearchField: some View {
+    HStack(spacing: PrismaSpacing.sm) {
+      Image(systemName: "magnifyingglass")
+        .foregroundStyle(PrismaColors.textTertiary)
+
+      TextField(String(localized: "sources.search"), text: $viewModel.searchText)
+        .font(PrismaTypography.body())
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .focused($searchFocused)
+
+      if !viewModel.searchText.isEmpty {
+        Button {
+          viewModel.searchText = ""
+          searchFocused = false
+        } label: {
+          Image(systemName: "xmark.circle.fill")
+            .foregroundStyle(PrismaColors.textTertiary)
+        }
+        .buttonStyle(.plain)
+      }
+    }
+    .padding(.horizontal, PrismaSpacing.md)
+    .padding(.vertical, PrismaSpacing.sm)
+    .prismaGlass(cornerRadius: PrismaRadius.md)
   }
 
   private func onboardingFeedRow(_ feed: RecommendedFeed) -> some View {
     let isSelected = viewModel.isFeedSelected(feed.id)
     return Button {
       viewModel.toggleFeed(feed.id)
+      HapticFeedback.light()
     } label: {
       HStack(spacing: PrismaSpacing.md) {
         SourceIconView(
@@ -110,6 +171,17 @@ struct OnboardingView: View {
             .font(PrismaTypography.callout(.semibold))
             .foregroundStyle(PrismaColors.textPrimary)
             .lineLimit(1)
+          HStack(spacing: PrismaSpacing.xs) {
+            Text(ContentStyleFilter.style(for: feed))
+              .font(PrismaTypography.caption2(.semibold))
+              .foregroundStyle(PrismaColors.accentFallback)
+            if let country = NewsCountry.from(code: feed.countryCode) {
+              Text(country.displayName)
+                .font(PrismaTypography.caption2())
+                .foregroundStyle(PrismaColors.textTertiary)
+                .lineLimit(1)
+            }
+          }
           if let description = feed.description {
             Text(description)
               .font(PrismaTypography.caption2())
@@ -126,6 +198,12 @@ struct OnboardingView: View {
       }
       .padding(PrismaSpacing.md)
       .prismaGlass(cornerRadius: PrismaRadius.md)
+      .overlay {
+        if isSelected {
+          RoundedRectangle(cornerRadius: PrismaRadius.md, style: .continuous)
+            .stroke(PrismaColors.accentFallback.opacity(0.35), lineWidth: 1)
+        }
+      }
     }
     .buttonStyle(.plain)
     .accessibilityLabel(feed.name)

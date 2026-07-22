@@ -16,23 +16,25 @@ struct SavedView: View {
             .padding(.horizontal, PrismaSpacing.md)
             .padding(.top, PrismaSpacing.sm)
 
+          if viewModel.showsCollectionPicker {
+            collectionsSection
+              .padding(.horizontal, PrismaSpacing.md)
+          }
+
           if viewModel.displayedArticles.isEmpty {
             EmptyStateView(
-              icon: viewModel.selectedFilter.emptyIcon,
-              title: viewModel.selectedFilter.emptyTitle,
-              message: viewModel.selectedFilter.emptyMessage
+              icon: viewModel.emptyStateIcon,
+              title: viewModel.emptyStateTitle,
+              message: viewModel.emptyStateMessage
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
           } else {
             ScrollView {
               LazyVStack(spacing: PrismaSpacing.sm) {
-                if !viewModel.collections.isEmpty, viewModel.selectedFilter == .saved {
-                  collectionsSection
-                }
-
                 ForEach(viewModel.displayedArticles, id: \.id) { article in
                   Button { onSelectArticle(article) } label: {
                     TranslatedArticleCard(article: article, previewStore: previewStore)
+                      .equatable()
                   }
                   .buttonStyle(.plain)
                 }
@@ -65,7 +67,15 @@ struct SavedView: View {
         viewModel.loadIfNeeded()
         previewStore.refresh(for: viewModel.displayedArticles)
       }
-      .onChange(of: viewModel.selectedFilter) { _, _ in
+      .onChange(of: viewModel.selectedFilter) { _, filter in
+        if filter != .saved {
+          viewModel.selectedCollectionID = nil
+        }
+        viewModel.rebuildDisplayedArticles()
+        previewStore.refresh(for: viewModel.displayedArticles)
+      }
+      .onChange(of: viewModel.selectedCollectionID) { _, _ in
+        viewModel.rebuildDisplayedArticles()
         previewStore.refresh(for: viewModel.displayedArticles)
       }
       .onReceive(NotificationCenter.default.publisher(for: .articleLibraryDidChange)) { _ in

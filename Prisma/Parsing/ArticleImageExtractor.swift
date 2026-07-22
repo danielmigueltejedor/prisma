@@ -99,6 +99,9 @@ enum ArticleImageURLResolver {
     value = upgradeReddit(value)
     value = upgradeTwitter(value)
     value = upgradeWordPressSizedPath(value)
+    if isGoogleFaviconURL(value) {
+      return value
+    }
     value = stripDownscalingQueryParameters(from: value)
     return value
   }
@@ -152,6 +155,12 @@ enum ArticleImageURLResolver {
 
     let range = NSRange(url.startIndex..., in: url)
     return regex.stringByReplacingMatches(in: url, range: range, withTemplate: "")
+  }
+
+  private static func isGoogleFaviconURL(_ url: String) -> Bool {
+    guard let components = URLComponents(string: url) else { return false }
+    let host = components.host?.lowercased() ?? ""
+    return host == "www.google.com" && components.path == "/s2/favicons"
   }
 
   private static func stripDownscalingQueryParameters(from url: String) -> String {

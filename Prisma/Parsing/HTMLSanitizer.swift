@@ -361,14 +361,63 @@ enum HTMLSanitizer {
     return result
   }
 
+  /// Normalizes plain text that may still contain HTML entities (RSS, translations).
+  static func normalizePlainText(_ text: String?) -> String? {
+    guard let text, !text.isEmpty else { return nil }
+    var result = decodeEntities(text)
+    result = cleanArtifacts(in: result)
+    result = result.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+    let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : trimmed
+  }
+
+  private static let namedEntities: [(String, String)] = [
+    ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""),
+    ("&#39;", "'"), ("&apos;", "'"), ("&nbsp;", " "),
+    ("&mdash;", "—"), ("&ndash;", "–"), ("&hellip;", "…"),
+    ("&oacute;", "ó"), ("&Oacute;", "Ó"), ("&aacute;", "á"), ("&Aacute;", "Á"),
+    ("&eacute;", "é"), ("&Eacute;", "É"), ("&iacute;", "í"), ("&Iacute;", "Í"),
+    ("&uacute;", "ú"), ("&Uacute;", "Ú"), ("&ntilde;", "ñ"), ("&Ntilde;", "Ñ"),
+    ("&uuml;", "ü"), ("&Uuml;", "Ü"), ("&ccedil;", "ç"), ("&Ccedil;", "Ç"),
+    ("&ldquo;", "\u{201C}"), ("&rdquo;", "\u{201D}"), ("&lsquo;", "\u{2018}"), ("&rsquo;", "\u{2019}"),
+    ("&bull;", "•"), ("&copy;", "©"), ("&reg;", "®"), ("&trade;", "™"),
+  ]
+
   private static func decodeEntities(_ string: String) -> String {
+    guard string.contains("&") else { return string }
     var result = string
-    let entities: [(String, String)] = [
-      ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""),
-      ("&#39;", "'"), ("&apos;", "'"), ("&nbsp;", " "),
-    ]
-    for (entity, char) in entities {
-      result = result.replacingOccurrences(of: entity, with: char)
+    for _ in 0..<2 {
+      result = decodeNumericEntities(result)
+      for (entity, char) in namedEntities {
+        result = result.replacingOccurrences(of: entity, with: char)
+      }
+    }
+    return result
+  }
+
+  private static func decodeNumericEntities(_ string: String) -> String {
+    guard let regex = try? NSRegularExpression(pattern: "&#(x([0-9A-Fa-f]+)|([0-9]+));") else {
+      return string
+    }
+    let ns = string as NSString
+    let matches = regex.matches(in: string, range: NSRange(location: 0, length: ns.length))
+    guard !matches.isEmpty else { return string }
+
+    var result = string
+    for match in matches.reversed() {
+      guard let fullRange = Range(match.range, in: result) else { continue }
+      let codePoint: UInt32?
+      if match.range(at: 2).location != NSNotFound,
+         let hexRange = Range(match.range(at: 2), in: string) {
+        codePoint = UInt32(string[hexRange], radix: 16)
+      } else if match.range(at: 3).location != NSNotFound,
+                let decRange = Range(match.range(at: 3), in: string) {
+        codePoint = UInt32(string[decRange])
+      } else {
+        codePoint = nil
+      }
+      guard let codePoint, let scalar = Unicode.Scalar(codePoint) else { continue }
+      result.replaceSubrange(fullRange, with: String(Character(scalar)))
     }
     return result
   }

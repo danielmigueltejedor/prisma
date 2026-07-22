@@ -2,7 +2,9 @@ import Foundation
 
 enum ContentStyleFilter {
   static let allSelection = "Todas"
-  static let orderedStyles = ["General", "Deportes", "Tecnología", "Economía", "Internacional"]
+  static let orderedStyles = [
+    "General", "Deportes", "Tecnología", "Economía", "Ciencia", "Historia", "Internacional",
+  ]
 
   static func filters(including availableStyles: Set<String>? = nil) -> [String] {
     guard let availableStyles, !availableStyles.isEmpty else {
@@ -55,6 +57,15 @@ enum ContentStyleFilter {
     {
       return "Economía"
     }
+    if blob.contains("ciencia") || blob.contains("science") || blob.contains("nature")
+      || blob.contains("scientific")
+    {
+      return "Ciencia"
+    }
+    if blob.contains("histor") || blob.contains("arqueolog") || blob.contains("patrimonio")
+    {
+      return "Historia"
+    }
     if blob.contains("internacional") || blob.contains("world") || blob.contains("reuters")
       || blob.contains("bbc")
     {
@@ -65,9 +76,11 @@ enum ContentStyleFilter {
 
   private static func normalizeCategory(_ category: String) -> String {
     let blob = normalized(category)
-    if blob.contains("deporte") || blob.contains("sport") { return "Deportes" }
-    if blob.contains("tecnolog") || blob.contains("tech") { return "Tecnología" }
+    if blob.contains("deporte") || blob.contains("sport") || blob.contains("motor") { return "Deportes" }
+    if blob.contains("tecnolog") || blob.contains("tech") || blob.contains("videojuego") { return "Tecnología" }
     if blob.contains("econom") { return "Economía" }
+    if blob.contains("ciencia") || blob.contains("science") { return "Ciencia" }
+    if blob.contains("histor") { return "Historia" }
     if blob.contains("internacional") || blob.contains("world") { return "Internacional" }
     return "General"
   }

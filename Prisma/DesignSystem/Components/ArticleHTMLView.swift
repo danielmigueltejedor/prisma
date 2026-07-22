@@ -33,15 +33,16 @@ struct ArticleHTMLView: View {
       onOpenExternalURL: onOpenExternalURL
     )
     .frame(height: max(contentHeight, 1))
-    .onAppear { refreshDocumentIfNeeded() }
-    .onChange(of: documentToken) { _, _ in refreshDocumentIfNeeded() }
+    .task(id: documentToken) {
+      await refreshDocumentIfNeeded()
+    }
     .onDisappear { documentTask?.cancel() }
   }
 
-  private func refreshDocumentIfNeeded() {
-    guard renderToken != documentToken else { return }
+  @MainActor
+  private func refreshDocumentIfNeeded() async {
     let token = documentToken
-    renderToken = token
+    guard renderToken != token else { return }
 
     let htmlCopy = html
     let scheme = colorScheme
@@ -50,8 +51,8 @@ struct ArticleHTMLView: View {
     let suppressImages = suppressInlineImages
 
     documentTask?.cancel()
-    documentTask = Task {
-      let document = await Task.detached(priority: .userInitiated) {
+    documentTask = Task { @MainActor in
+      let document = await Task.detached(priority: .utility) {
         HTMLSanitizer.readerDocument(
           from: htmlCopy,
           colorScheme: scheme,
@@ -61,9 +62,11 @@ struct ArticleHTMLView: View {
         )
       }.value
 
-      guard !Task.isCancelled, renderToken == token else { return }
+      guard !Task.isCancelled else { return }
+      renderToken = token
       renderedDocument = document
     }
+    await documentTask?.value
   }
 }
 
@@ -101,7 +104,7 @@ private struct ArticleWebView: UIViewRepresentable {
     guard context.coordinator.lastHTML != htmlDocument else { return }
     context.coordinator.lastHTML = htmlDocument
     if htmlDocument.isEmpty {
-      contentHeight = 1
+      context.coordinator.scheduleHeightUpdate(1)
       return
     }
     webView.loadHTMLString(htmlDocument, baseURL: baseURL)
@@ -120,6 +123,15 @@ private struct ArticleWebView: UIViewRepresentable {
 
     func attach(_ webView: WKWebView) {
       self.webView = webView
+    }
+
+    func scheduleHeightUpdate(_ height: CGFloat) {
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        if abs(height - self.contentHeight) > 1 {
+          self.contentHeight = height
+        }
+      }
     }
 
     func webView(
@@ -220,7 +232,7 @@ private struct ArticleWebView: UIViewRepresentable {
         DispatchQueue.main.async {
           let padded = ceil(height) + 8
           if abs(padded - self.contentHeight) > 1 {
-            self.contentHeight = padded
+            self.scheduleHeightUpdate(padded)
           }
         }
       }

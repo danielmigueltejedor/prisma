@@ -15,7 +15,6 @@ struct MainTabView: View {
   @State private var selectedSource: FeedSource?
   @State private var selectedAuthor: AuthorProfile?
   @State private var selectedTab = 0
-  @State private var readerViewModel: ArticleReaderViewModel?
   @State private var pendingNavigation: DeferredSheetNavigation?
   @State private var connectivity = NetworkConnectivityMonitor.shared
 
@@ -27,14 +26,15 @@ struct MainTabView: View {
       feedSourceRepository: dependencies.feedSourceRepository,
       preferenceRepository: dependencies.preferenceRepository,
       searchService: dependencies.searchService,
-      weatherService: dependencies.weatherService
+      weatherService: dependencies.weatherService,
+      collectionRepository: dependencies.collectionRepository
     ))
     _forYouViewModel = State(initialValue: ForYouViewModel(
       articleRepository: dependencies.articleRepository,
       articleService: dependencies.articleService,
       feedSourceRepository: dependencies.feedSourceRepository,
       preferenceRepository: dependencies.preferenceRepository,
-      recommendationEngine: dependencies.recommendationEngine,
+      sharedRankingService: dependencies.sharedRankingService,
       aiService: dependencies.aiService
     ))
     _sourcesViewModel = State(initialValue: SourcesViewModel(
@@ -68,6 +68,7 @@ struct MainTabView: View {
       ForYouView(
         viewModel: forYouViewModel,
         previewStore: dependencies.previewTranslationStore,
+        weather: todayViewModel.weather,
         makeReaderViewModel: { makeReaderViewModel(for: $0, cascade: true) },
         onSelectArticle: { openArticle($0) },
         onOpenSources: { selectedTab = 2 }
@@ -104,26 +105,48 @@ struct MainTabView: View {
       }
     }
     .onChange(of: selectedTab) { _, tab in
-      forYouViewModel.isTabActive = tab == 1
       if tab == 1 {
         forYouViewModel.tabDidBecomeActive()
+        Task { await todayViewModel.loadWeather() }
+      } else {
+        forYouViewModel.tabDidBecomeInactive()
       }
+      syncBackgroundWorkForInteraction()
       if tab == 0 {
         Task { await todayViewModel.loadWeather() }
       }
     }
+    .onReceive(NotificationCenter.default.publisher(for: .articleTrainingLike)) { notification in
+      guard let articleID = notification.userInfo?[ArticleTrainingNotificationKey.articleID] as? String else { return }
+      forYouViewModel.handleCascadeLike(articleID: articleID)
+    }
+    .onReceive(NotificationCenter.default.publisher(for: .articleTrainingSave)) { notification in
+      guard let articleID = notification.userInfo?[ArticleTrainingNotificationKey.articleID] as? String else { return }
+      forYouViewModel.handleCascadeSave(articleID: articleID)
+    }
     .onChange(of: scenePhase) { _, phase in
-      if phase == .background {
-        dependencies.offlineReadingCoordinator.schedulePrefetch()
-        dependencies.backgroundTranslationCoordinator.scheduleSweep()
+      switch phase {
+      case .background:
+        dependencies.backgroundContentCoordinator.handleMovedToBackground()
+        dependencies.backgroundTranslationCoordinator.scheduleSweep(priority: .background)
+      case .active:
+        dependencies.backgroundContentCoordinator.handleMovedToForeground()
+      default:
+        break
       }
     }
     .task {
       await dependencies.refreshEnabledSourcesOnLaunchIfNeeded()
+      dependencies.schedulePostLaunchWarmup()
+    }
+    .onAppear {
+      syncBackgroundWorkForInteraction()
     }
     .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
+      guard !dependencies.backgroundWorkGate.shouldDeferHeavyWork else { return }
       dependencies.offlineReadingCoordinator.schedulePrefetch()
-      dependencies.backgroundTranslationCoordinator.scheduleSweep(priority: .userInitiated)
+      dependencies.backgroundTranslationCoordinator.scheduleSweep(priority: .utility)
+      dependencies.backgroundContentCoordinator.scheduleIdleWarmup()
     }
     .onReceive(NotificationCenter.default.publisher(for: .preferencesDidChange)) { _ in
       dependencies.weatherService.invalidateCache()
@@ -131,39 +154,26 @@ struct MainTabView: View {
     }
     .tint(PrismaColors.accentFallback)
     .sheet(item: $selectedArticle) { article in
-      Group {
-        if let readerViewModel {
-          ArticleReaderView(
-            viewModel: readerViewModel,
-            onSelectArticle: { next in
-              guard next.id != article.id else { return }
-              chainNavigation(.article(next)) { selectedArticle = nil }
-            },
-            onOpenSource: { source in
-              chainNavigation(.source(source)) { selectedArticle = nil }
-            },
-            onOpenAuthor: { authorName in
-              chainNavigation(.author(authorName)) { selectedArticle = nil }
-            }
-          )
-        } else {
-          PrismaScreen {
-            LoadingView(message: String(localized: "app.loading"))
-          }
+      ArticleReaderSheet(
+        article: article,
+        dependencies: dependencies,
+        onSelectArticle: { next in
+          guard next.id != article.id else { return }
+          chainNavigation(.article(next)) { selectedArticle = nil }
+        },
+        onOpenSource: { source in
+          chainNavigation(.source(source)) { selectedArticle = nil }
+        },
+        onOpenAuthor: { authorName in
+          chainNavigation(.author(authorName)) { selectedArticle = nil }
         }
-      }
-      .task(id: article.id) {
-        guard readerViewModel?.article.id != article.id else { return }
-        await Task.yield()
-        guard selectedArticle?.id == article.id else { return }
-        readerViewModel = makeReaderViewModel(for: article)
-      }
+      )
     }
     .onChange(of: selectedArticle) { _, newValue in
       if newValue == nil {
-        readerViewModel = nil
         resumePendingNavigation()
       }
+      syncBackgroundWorkForInteraction()
     }
     .sheet(item: $selectedAuthor) { author in
       AuthorDetailView(
@@ -210,6 +220,14 @@ struct MainTabView: View {
     }
   }
 
+  private func syncBackgroundWorkForInteraction() {
+    if selectedArticle != nil {
+      dependencies.pauseBackgroundWorkForReader()
+    } else {
+      dependencies.resumeBackgroundWorkAfterReader()
+    }
+  }
+
   private func handleTabReTap(_ tabIndex: Int) {
     switch tabIndex {
     case 0:
@@ -240,12 +258,7 @@ struct MainTabView: View {
   }
 
   private func openArticle(_ article: Article) {
-    if readerViewModel?.article.id == article.id {
-      readerViewModel?.syncLibraryState()
-      selectedArticle = article
-      return
-    }
-    readerViewModel = nil
+    dependencies.pauseBackgroundWorkForReader()
     selectedArticle = article
   }
 
@@ -263,6 +276,7 @@ struct MainTabView: View {
       redditCommentsTranslationService: dependencies.redditCommentsTranslationService,
       summaryService: dependencies.summaryService,
       insightRepository: dependencies.insightRepository,
+      localReadingCorpusService: dependencies.localReadingCorpusService,
       impressionMode: cascade ? .cascadeTraining : .standard
     )
   }

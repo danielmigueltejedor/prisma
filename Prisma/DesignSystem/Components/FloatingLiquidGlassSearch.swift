@@ -4,8 +4,11 @@ private enum FloatingSearchMetrics {
   static let collapseThreshold: CGFloat = 18
   static let fieldIconSize: CGFloat = 19
   static let toolbarIconSize: CGFloat = 22
-  static let toolbarHitSize: CGFloat = 48
-  static let expandedFieldVerticalPadding: CGFloat = 11
+  /// Altura única para el botón circular y la cápsula expandida (evita salto al escribir).
+  static let toolbarHitSize: CGFloat = 54
+  static let expandedCloseFieldSpacing: CGFloat = 22
+  /// Umbral del contenedor glass: por debajo de esta distancia los efectos se fusionan.
+  static let expandedGlassMergeSpacing: CGFloat = 18
 }
 
 private struct ScrollOffsetPreferenceKey: PreferenceKey {
@@ -190,8 +193,8 @@ struct MorphingLiquidGlassNavigationBar<Trailing: View>: View {
   @available(iOS 26.0, *)
   @ViewBuilder
   private var ios26SearchCluster: some View {
-    GlassEffectContainer(spacing: 12) {
-      HStack(spacing: 8) {
+    GlassEffectContainer(spacing: FloatingSearchMetrics.expandedGlassMergeSpacing) {
+      HStack(spacing: isExpanded ? FloatingSearchMetrics.expandedCloseFieldSpacing : 0) {
         if isExpanded {
           Button(action: collapseSearch) {
             Image(systemName: "xmark")
@@ -214,7 +217,7 @@ struct MorphingLiquidGlassNavigationBar<Trailing: View>: View {
           if isExpanded {
             morphingSearchFieldContent
               .padding(.horizontal, PrismaSpacing.md)
-              .padding(.vertical, FloatingSearchMetrics.expandedFieldVerticalPadding)
+              .frame(height: FloatingSearchMetrics.toolbarHitSize)
               .frame(maxWidth: .infinity, alignment: .leading)
               .glassEffect(.regular.interactive(), in: .capsule)
           } else {
@@ -241,7 +244,7 @@ struct MorphingLiquidGlassNavigationBar<Trailing: View>: View {
 
   @ViewBuilder
   private var legacySearchCluster: some View {
-    HStack(spacing: 8) {
+    HStack(spacing: isExpanded ? FloatingSearchMetrics.expandedCloseFieldSpacing : 0) {
       if isExpanded {
         LiquidGlassCloseToolbarButton(accessibilityLabel: String(localized: "action.cancel")) {
           collapseSearch()
@@ -362,7 +365,8 @@ struct LiquidGlassSearchField: View {
       }
     }
     .padding(.horizontal, PrismaSpacing.md)
-    .padding(.vertical, placement == .toolbar ? PrismaSpacing.xs : PrismaSpacing.sm)
+    .padding(.vertical, placement == .toolbar ? 0 : PrismaSpacing.sm)
+    .frame(height: placement == .toolbar ? FloatingSearchMetrics.toolbarHitSize : nil)
     .frame(maxWidth: .infinity, alignment: .leading)
     .background {
       if placement == .inset {
@@ -476,7 +480,11 @@ extension View {
       self.onScrollGeometryChange(for: CGFloat.self) { geometry in
         geometry.contentOffset.y
       } action: { _, newValue in
-        offset.wrappedValue = newValue
+        // Solo actualiza al cruzar el umbral del header para no invalidar la vista en cada frame.
+        let marker: CGFloat = newValue > 4 ? 8 : 0
+        if abs(offset.wrappedValue - marker) > 0.5 {
+          offset.wrappedValue = marker
+        }
       }
     } else {
       self

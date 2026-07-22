@@ -6,7 +6,7 @@ final class ForYouViewModel {
   private static let articleFetchLimit = 200
   private static let rankingDebounceNanoseconds: UInt64 = 350_000_000
   private static let cascadeFeedLimit = 40
-  private static let cascadeReaderCacheLimit = 4
+  private static let cascadeReaderCacheLimit = 2
   private static let cascadePreloadAhead = 1
   private static let rankingRefreshInterval: TimeInterval = 300
 
@@ -14,23 +14,22 @@ final class ForYouViewModel {
   var clusters: [ClusterDTO] = []
   var isLoadingRanking = false
   var dailyBriefing: DailyBriefingDTO?
-  var isLoadingAI = false
   var errorMessage: String?
   var isRefreshingAIInBackground = false
   var isTabActive = false
-  var cascadeViewEnabled = false
   var cascadeFeedRefreshToken = 0
-  var listFeedRefreshToken = 0
 
   var cascadeArticles: [Article] {
-    cascadeViewEnabled && !cascadeFeed.isEmpty ? cascadeFeed : articles
+    !cascadePages.isEmpty ? cascadePages : articles
   }
+
+  private(set) var cascadePages: [Article] = []
 
   private let articleRepository: ArticleRepository
   private let articleService: ArticleService
   private let feedSourceRepository: FeedSourceRepository
   private let preferenceRepository: PreferenceRepository
-  private let recommendationEngine: RecommendationEngine
+  private let sharedRankingService: SharedArticleRankingService
   private let aiService: AIService
   private static var memoryCache: PersistedAICache?
   private var hasLoadedData = false
@@ -43,12 +42,15 @@ final class ForYouViewModel {
   private var pendingCascadeRebuildIndex: Int?
   private var lastRankedAt: Date?
   private var lastRankedArticleCount = 0
-  private var cachedSourcesById: [UUID: FeedSource]?
-  private var cachedFavoriteSourceIds: Set<UUID>?
-  private var cachedBlockedSourceIds: Set<UUID>?
   private var rankingInputsTask: Task<Void, Never>?
   private var cascadePreloadTask: Task<Void, Never>?
+  private var cascadePrepareTask: Task<Void, Never>?
+  private var cascadeScrollCommitTask: Task<Void, Never>?
   private var cascadeCompleteTask: Task<Void, Never>?
+  private var cascadeOuterScrollActive = false
+  private var pendingRankingCascadeSync = false
+  private var aiLoadTask: Task<Void, Never>?
+  private var tabActiveRankingTask: Task<Void, Never>?
   private var pendingTabReTapFollowUp = false
   private(set) var recommendationReasons: [String: RecommendationReason] = [:]
 
@@ -57,14 +59,14 @@ final class ForYouViewModel {
     articleService: ArticleService,
     feedSourceRepository: FeedSourceRepository,
     preferenceRepository: PreferenceRepository,
-    recommendationEngine: RecommendationEngine,
+    sharedRankingService: SharedArticleRankingService,
     aiService: AIService
   ) {
     self.articleRepository = articleRepository
     self.articleService = articleService
     self.feedSourceRepository = feedSourceRepository
     self.preferenceRepository = preferenceRepository
-    self.recommendationEngine = recommendationEngine
+    self.sharedRankingService = sharedRankingService
     self.aiService = aiService
 
     if let diskCache = AIContentCacheStore.load() {
@@ -82,19 +84,49 @@ final class ForYouViewModel {
   }
 
   func loadIfNeeded() {
-    guard !hasLoadedData else { return }
-    reload()
+    guard !hasLoadedData, isTabActive else { return }
+    bootstrapFeed()
   }
 
   func tabDidBecomeActive() {
     isTabActive = true
     if !hasLoadedData {
-      reload()
-    } else if shouldReloadRanking {
-      reloadRankingOnly()
+      bootstrapFeed()
+    } else {
+      scheduleRankingRefreshIfStale()
     }
-    if cascadeViewEnabled, cascadeFeed.isEmpty, !articles.isEmpty {
+    if cascadeFeed.isEmpty, !articles.isEmpty {
       resetCascadeFeed()
+    }
+  }
+
+  func tabDidBecomeInactive() {
+    isTabActive = false
+    cascadeOuterScrollActive = false
+    tabActiveRankingTask?.cancel()
+    aiLoadTask?.cancel()
+    rankingTask?.cancel()
+    rankingInputsTask?.cancel()
+    cascadePreloadTask?.cancel()
+    cascadePrepareTask?.cancel()
+    cascadeScrollCommitTask?.cancel()
+    cascadeCompleteTask?.cancel()
+    isLoadingRanking = false
+    cancelCascadeReaderWork(keeping: nil)
+    flushDeferredCascadeWork()
+  }
+
+  func setCascadeOuterScrollActive(_ active: Bool) {
+    cascadeOuterScrollActive = active
+    if active {
+      cascadeCompleteTask?.cancel()
+      cascadeScrollCommitTask?.cancel()
+    }
+  }
+
+  func cancelCascadeReaderWork(keeping articleID: String?) {
+    for (id, reader) in cascadeReaderCache where id != articleID {
+      reader.cancelBackgroundWork()
     }
   }
 
@@ -105,15 +137,20 @@ final class ForYouViewModel {
   }
 
   func handleFeedsRefreshed() {
+    sharedRankingService.invalidate()
+    guard !isTabActive else {
+      pendingRankingCascadeSync = true
+      return
+    }
     invalidateRankingMetadataCache()
     reloadRankingOnly(force: true)
-    refreshAIIfNeeded(forceWhenEmpty: false)
   }
 
   /// Pulsa de nuevo la pestaña Para ti: nuevo ranking y feed fresco (sin volver a lo ya visto en cascada).
   func refreshFromTabReTap() {
     isTabActive = true
     rankingInputsTask?.cancel()
+    tabActiveRankingTask?.cancel()
     HapticFeedback.medium()
     pendingTabReTapFollowUp = true
     reloadRankingOnly(force: true)
@@ -122,91 +159,99 @@ final class ForYouViewModel {
   private func applyTabReTapFollowUp() {
     guard pendingTabReTapFollowUp else { return }
     pendingTabReTapFollowUp = false
-    if cascadeViewEnabled {
-      pruneCascadeSeenKeepingReadArticles()
-      resetCascadeFeed()
-      cascadeFeedRefreshToken += 1
-    } else {
-      listFeedRefreshToken += 1
-      refreshAIIfNeeded(forceWhenEmpty: false)
-    }
+    pruneCascadeSeenKeepingReadArticles()
+    resetCascadeFeed()
+    cascadeFeedRefreshToken += 1
   }
 
   private func invalidateRankingMetadataCache() {
-    cachedSourcesById = nil
-    cachedFavoriteSourceIds = nil
-    cachedBlockedSourceIds = nil
+    sharedRankingService.invalidate()
   }
 
   private func pruneCascadeSeenKeepingReadArticles() {
+    let knownArticles = Dictionary(uniqueKeysWithValues: articles.map { ($0.id, $0) })
+    var missingIDs = Set<String>()
     cascadeSeenIDs = Set(
       cascadeSeenIDs.filter { id in
-        guard let article = try? articleRepository.find(by: id) else { return false }
-        return article.isRead
+        if let article = knownArticles[id] {
+          return article.isRead
+        }
+        missingIDs.insert(id)
+        return false
       }
     )
-    guard let prefs = try? preferenceRepository.getOrCreate() else { return }
-    prefs.cascadeSeenArticleIDs = prefs.cascadeSeenArticleIDs.filter { id in
-      guard let article = try? articleRepository.find(by: id) else { return false }
-      return article.isRead
+    if !missingIDs.isEmpty, let fetched = try? articleRepository.find(byIDs: missingIDs) {
+      let readIDs = Set(fetched.filter(\.isRead).map(\.id))
+      cascadeSeenIDs.formUnion(readIDs)
     }
+    guard let prefs = try? preferenceRepository.getOrCreate() else { return }
+    prefs.cascadeSeenArticleIDs = prefs.cascadeSeenArticleIDs.filter { cascadeSeenIDs.contains($0) }
     try? preferenceRepository.save()
   }
 
   func handleLibraryChanged() {
-    if cascadeViewEnabled, isTabActive {
-      syncCascadeReaderLibraryState()
-      return
-    }
+    sharedRankingService.invalidate()
+    guard !isTabActive else { return }
     scheduleRankingRefresh()
   }
 
-  private func syncCascadeReaderLibraryState() {
-    for reader in cascadeReaderCache.values {
-      reader.syncLibraryState()
-    }
-  }
-
   func handlePreferencesChanged() {
-    reloadPreferences()
-    if cascadeViewEnabled {
-      reloadRankingOnly()
-    } else {
-      scheduleRankingRefresh()
+    loadCascadeSeenIDs()
+    if isTabActive {
+      pendingRankingCascadeSync = true
+      return
     }
+    reloadRankingOnly()
   }
 
   func reload() {
-    reloadRankingOnly()
-    refreshAIIfNeeded(forceWhenEmpty: true)
+    if !hasLoadedData {
+      reloadRankingOnly(force: true)
+      return
+    }
+    reloadRankingOnly(force: true)
+  }
+
+  private func bootstrapFeed() {
+    reloadRankingOnly(force: true)
+  }
+
+  private func scheduleRankingRefreshIfStale() {
+    tabActiveRankingTask?.cancel()
+    guard shouldReloadRanking, !cascadeFeed.isEmpty else { return }
+    tabActiveRankingTask = Task(priority: .utility) {
+      try? await Task.sleep(nanoseconds: 3_000_000_000)
+      guard !Task.isCancelled, isTabActive else { return }
+      reloadRankingOnly()
+    }
   }
 
   private func scheduleRankingRefresh() {
+    guard !isTabActive else { return }
     rankingTask?.cancel()
     rankingTask = Task {
       try? await Task.sleep(nanoseconds: Self.rankingDebounceNanoseconds)
       guard !Task.isCancelled else { return }
       reloadRankingOnly()
-      if !cascadeViewEnabled {
-        refreshAIIfNeeded(forceWhenEmpty: false)
-      }
     }
   }
 
   private func reloadRankingOnly(force: Bool = false) {
     if !force, !shouldReloadRanking, hasLoadedData { return }
+    if !force, isTabActive, hasLoadedData { return }
+
     rankingInputsTask?.cancel()
     isLoadingRanking = true
-    rankingInputsTask = Task(priority: .userInitiated) {
+    rankingInputsTask = Task(priority: .utility) {
       await Task.yield()
       defer { isLoadingRanking = false }
       guard !Task.isCancelled else { return }
       do {
-        try performRanking()
-        if cascadeViewEnabled {
-          syncCascadeFeedAfterRanking()
-        }
+        try await performRanking(force: force || !hasLoadedData)
+        syncCascadeFeedAfterRanking()
         applyTabReTapFollowUp()
+      } catch is CancellationError {
+        return
       } catch {
         errorMessage = error.localizedDescription
         pendingTabReTapFollowUp = false
@@ -214,71 +259,34 @@ final class ForYouViewModel {
     }
   }
 
-  private func performRanking() throws {
-    let prefs = try preferenceRepository.getOrCreate()
-    let all = try articleRepository.fetchAll(limit: Self.articleFetchLimit)
-    let sourcesById = try sourcesByIdCached()
-    let favorites = try favoriteSourceIdsCached()
-    let savedCategories = Set(all.filter(\.isSaved).flatMap(\.categoryNames))
-    let blockedSources = try blockedSourceIdsCached()
-    let readCounts = Dictionary(grouping: all.filter(\.isRead), by: \.sourceId)
-      .mapValues(\.count)
-    let interest = ReadingInterestProfiler.build(
-      from: all,
-      favoriteSourceIds: favorites,
-      sourcesById: sourcesById
+  private func performRanking(force: Bool = false) async throws {
+    try Task.checkCancellation()
+    let snapshot = try await sharedRankingService.ranking(
+      limit: Self.articleFetchLimit,
+      force: force
     )
+    try Task.checkCancellation()
 
-    articles = recommendationEngine.rank(
-      articles: all,
-      favoriteSourceIds: favorites,
-      savedCategoryNames: savedCategories,
-      readSourceCounts: readCounts,
-      blockedKeywords: prefs.blockedKeywords,
-      blockedSourceIds: blockedSources,
-      interest: interest
-    )
-    recommendationReasons = Dictionary(
-      uniqueKeysWithValues: articles.prefix(30).enumerated().compactMap { index, article in
-        guard let reason = RecommendationReasonBuilder.reason(
-          for: article,
-          rankIndex: index,
-          favoriteSourceIds: favorites,
-          savedCategoryNames: savedCategories,
-          interest: interest
-        ) else { return nil }
-        return (article.id, reason)
-      }
-    )
+    articles = snapshot.ranked
+    var reasons: [String: RecommendationReason] = [:]
+    for (index, article) in snapshot.ranked.prefix(30).enumerated() {
+      guard let reason = RecommendationReasonBuilder.reason(
+        for: article,
+        rankIndex: index,
+        favoriteSourceIds: snapshot.favoriteSourceIds,
+        savedCategoryNames: snapshot.savedCategoryNames,
+        interest: snapshot.interest
+      ) else { continue }
+      reasons[article.id] = reason
+    }
+    recommendationReasons = reasons
     lastRankedAt = .now
     lastRankedArticleCount = articles.count
     hasLoadedData = true
   }
 
-  private func sourcesByIdCached() throws -> [UUID: FeedSource] {
-    if let cachedSourcesById { return cachedSourcesById }
-    let sources = try feedSourceRepository.fetchAll()
-    let dict = Dictionary(uniqueKeysWithValues: sources.map { ($0.id, $0) })
-    cachedSourcesById = dict
-    return dict
-  }
-
-  private func favoriteSourceIdsCached() throws -> Set<UUID> {
-    if let cachedFavoriteSourceIds { return cachedFavoriteSourceIds }
-    let ids = Set(try feedSourceRepository.fetchFavorites().map(\.id))
-    cachedFavoriteSourceIds = ids
-    return ids
-  }
-
-  private func blockedSourceIdsCached() throws -> Set<UUID> {
-    if let cachedBlockedSourceIds { return cachedBlockedSourceIds }
-    let ids = try feedSourceRepository.fetchBlockedSourceIds()
-    cachedBlockedSourceIds = ids
-    return ids
-  }
-
-  private func refreshAIIfNeeded(forceWhenEmpty: Bool) {
-    guard shouldLoadAI else { return }
+  private func refreshAIIfNeeded() {
+    guard shouldLoadAI, isTabActive, !articles.isEmpty else { return }
 
     let signature = aiSignature(from: articles)
     let cache = Self.memoryCache ?? AIContentCacheStore.load()
@@ -286,22 +294,15 @@ final class ForYouViewModel {
     if let cache, cache.signature == signature {
       applyCache(cache)
       Self.memoryCache = cache
-      guard isTabActive, AIContentCacheStore.shouldRefresh(cache: cache, signature: signature) else { return }
-      Task(priority: .utility) { await loadAIContent(signature: signature, showLoading: false) }
       return
     }
 
-    guard isTabActive || forceWhenEmpty else { return }
-    let shouldShowLoading = forceWhenEmpty && clusters.isEmpty
-    Task(priority: .utility) { await loadAIContent(signature: signature, showLoading: shouldShowLoading) }
+    aiLoadTask?.cancel()
+    aiLoadTask = Task(priority: .utility) { await loadAIContent(signature: signature) }
   }
 
   private var shouldLoadAI: Bool {
-    #if DEBUG
-    return true
-    #else
-    return hasOnDeviceAI
-    #endif
+    hasOnDeviceAI
   }
 
   private func applyCache(_ cache: PersistedAICache) {
@@ -309,29 +310,21 @@ final class ForYouViewModel {
     dailyBriefing = cache.briefing
   }
 
-  private func loadAIContent(signature: String, showLoading: Bool) async {
-    if showLoading {
-      isLoadingAI = true
-    } else {
-      isRefreshingAIInBackground = true
-    }
-    defer {
-      isLoadingAI = false
-      isRefreshingAIInBackground = false
-    }
+  private func loadAIContent(signature: String) async {
+    isRefreshingAIInBackground = true
+    defer { isRefreshingAIInBackground = false }
+
+    guard !articles.isEmpty else { return }
 
     do {
       let clusterInput = Array(articles.prefix(20))
-      let rawClusters = try await aiService.clusterArticles(clusterInput)
-      let sanitizedClusters = rawClusters.map(sanitize(cluster:))
-
-      var briefing: DailyBriefingDTO?
-      if let prefs = try? preferenceRepository.getOrCreate(), !articles.isEmpty {
-        briefing = try? await aiService.generateDailyBriefing(
-          articles: Array(articles.prefix(15)),
-          preferences: prefs
-        )
+      let rawClusters: [ClusterDTO] = try await withTimeout(seconds: 45) {
+        try await self.aiService.clusterArticles(clusterInput)
       }
+      guard !Task.isCancelled else { return }
+      let sanitizedClusters = rawClusters.map { sanitize(cluster: $0) }
+
+      let briefing = DailyBriefingDTO.from(clusters: sanitizedClusters)
 
       clusters = sanitizedClusters
       dailyBriefing = briefing
@@ -385,31 +378,21 @@ final class ForYouViewModel {
   }
 
   private func reloadPreferences() {
-    let wasEnabled = cascadeViewEnabled
-    cascadeViewEnabled = (try? preferenceRepository.getOrCreate())?.cascadeViewEnabled ?? false
     loadCascadeSeenIDs()
-    if cascadeViewEnabled, !wasEnabled {
-      resetCascadeFeed()
-    }
-    if !cascadeViewEnabled {
-      cascadeFeed = []
-      cascadeReaderCache = [:]
-      cascadePageStartedAt = nil
-      pendingCascadeSimilarAnchorID = nil
-      pendingCascadeRebuildIndex = nil
-    }
   }
 
   private func loadCascadeSeenIDs() {
     cascadeSeenIDs = Set((try? preferenceRepository.getOrCreate())?.cascadeSeenArticleIDs ?? [])
   }
 
-  private func persistCascadeSeen(articleID: String) {
+  private func persistCascadeSeen(articleID: String, save: Bool = true) {
     cascadeSeenIDs.insert(articleID)
     guard let prefs = try? preferenceRepository.getOrCreate() else { return }
     if !prefs.cascadeSeenArticleIDs.contains(articleID) {
       prefs.cascadeSeenArticleIDs.append(articleID)
-      try? preferenceRepository.save()
+      if save {
+        try? preferenceRepository.save()
+      }
     }
   }
 
@@ -421,63 +404,41 @@ final class ForYouViewModel {
     articles.filter { !isExcludedFromCascade($0) }
   }
 
+  func activateCascadeReader(
+    for article: Article,
+    factory: (Article) -> ArticleReaderViewModel
+  ) -> ArticleReaderViewModel {
+    let reader: ArticleReaderViewModel
+    if let cached = cascadeReaderCache[article.id] {
+      reader = cached
+    } else {
+      reader = factory(article)
+      cascadeReaderCache[article.id] = reader
+      trimCascadeReaderCache(keeping: [article.id])
+    }
+
+    cascadePrepareTask?.cancel()
+    cascadePrepareTask = Task(priority: .utility) { @MainActor in
+      await Task.yield()
+      guard !Task.isCancelled else { return }
+      await reader.prepareForCascadeDisplayIfNeeded()
+    }
+    return reader
+  }
+
+  /// Legacy entry point — do not call from SwiftUI `body`.
   func cascadeReader(
     for article: Article,
     factory: (Article) -> ArticleReaderViewModel
   ) -> ArticleReaderViewModel {
-    if let cached = cascadeReaderCache[article.id] {
-      cached.syncLibraryState()
-      return cached
-    }
-    let reader = factory(article)
-    reader.prepareForCascadeDisplay()
-    cascadeReaderCache[article.id] = reader
-    return reader
+    activateCascadeReader(for: article, factory: factory)
   }
 
   func preloadCascadeReaders(
     around articleID: String?,
     factory: ((Article) -> ArticleReaderViewModel)?
   ) {
-    guard cascadeViewEnabled, let factory else { return }
-    cascadePreloadTask?.cancel()
-    cascadePreloadTask = Task(priority: .utility) {
-      try? await Task.sleep(nanoseconds: 100_000_000)
-      guard !Task.isCancelled else { return }
-      preloadCascadeReadersNow(around: articleID, factory: factory)
-    }
-  }
-
-  private func preloadCascadeReadersNow(
-    around articleID: String?,
-    factory: (Article) -> ArticleReaderViewModel
-  ) {
-    guard let articleID,
-          let centerIndex = cascadeFeed.firstIndex(where: { $0.id == articleID }) else {
-      let head = cascadeFeed.prefix(Self.cascadePreloadAhead + 1)
-      for article in head {
-        warmCascadeReader(for: article, factory: factory)
-      }
-      trimCascadeReaderCache(keeping: head.map(\.id))
-      return
-    }
-
-    let end = min(centerIndex + Self.cascadePreloadAhead, cascadeFeed.count - 1)
-    let slice = cascadeFeed[centerIndex ... end]
-    for article in slice {
-      warmCascadeReader(for: article, factory: factory)
-    }
-    trimCascadeReaderCache(keeping: cascadeFeed[max(centerIndex - 1, 0) ... end].map(\.id))
-  }
-
-  private func warmCascadeReader(
-    for article: Article,
-    factory: (Article) -> ArticleReaderViewModel
-  ) {
-    guard cascadeReaderCache[article.id] == nil else { return }
-    let reader = factory(article)
-    reader.prepareForCascadeDisplay()
-    cascadeReaderCache[article.id] = reader
+    // Intentionally no-op: preparing readers during scroll caused main-thread stalls.
   }
 
   private func trimCascadeReaderCache(keeping ids: [String]) {
@@ -495,13 +456,28 @@ final class ForYouViewModel {
     cascadePageStartedAt = Date()
   }
 
+  func handleCascadeScrollChange(from oldID: String?, to newID: String?) {
+    if let newID {
+      beginCascadePage(articleID: newID)
+    }
+
+    cascadeScrollCommitTask?.cancel()
+    guard let oldID, let newID, oldID != newID else { return }
+
+    cascadeScrollCommitTask = Task(priority: .utility) {
+      try? await Task.sleep(nanoseconds: 1_500_000_000)
+      guard !Task.isCancelled else { return }
+      await MainActor.run {
+        completeCascadePage(articleID: oldID)
+      }
+    }
+  }
+
   func completeCascadePage(articleID: String) {
-    guard cascadeViewEnabled else { return }
+    guard !cascadeOuterScrollActive else { return }
 
     let dwell = cascadePageStartedAt.map { Date().timeIntervalSince($0) } ?? 0
     cascadePageStartedAt = nil
-    let similarAnchor = pendingCascadeSimilarAnchorID
-    pendingCascadeSimilarAnchorID = nil
     let index = cascadeFeed.firstIndex { $0.id == articleID } ?? 0
     pendingCascadeRebuildIndex = index
 
@@ -509,23 +485,19 @@ final class ForYouViewModel {
     cascadeCompleteTask = Task(priority: .utility) {
       await Task.yield()
       guard !Task.isCancelled else { return }
-      persistCascadeSeen(articleID: articleID)
+      persistCascadeSeen(articleID: articleID, save: false)
       if dwell >= 2, let article = try? articleRepository.find(by: articleID) {
-        try? articleService.markRead(article)
-        try? articleService.recordDwellTime(article, seconds: dwell)
+        try? articleService.markReadAndRecordDwell(article, seconds: dwell)
       }
-      rebuildCascadeTail(from: index, injectSimilarTo: similarAnchor)
-      pendingCascadeRebuildIndex = nil
+      try? preferenceRepository.save()
     }
   }
 
   func handleCascadeLike(articleID: String) {
-    guard cascadeViewEnabled else { return }
     pendingCascadeSimilarAnchorID = articleID
   }
 
   func handleCascadeSave(articleID: String) {
-    guard cascadeViewEnabled else { return }
     pendingCascadeSimilarAnchorID = articleID
   }
 
@@ -536,9 +508,18 @@ final class ForYouViewModel {
     pendingCascadeSimilarAnchorID = nil
     pendingCascadeRebuildIndex = nil
     cascadeReaderCache = [:]
+    syncCascadePages()
   }
 
   private func syncCascadeFeedAfterRanking() {
+    if isTabActive {
+      pendingRankingCascadeSync = true
+      return
+    }
+    applyCascadeFeedSyncAfterRanking()
+  }
+
+  private func applyCascadeFeedSyncAfterRanking() {
     if cascadeFeed.isEmpty {
       resetCascadeFeed()
       return
@@ -553,8 +534,22 @@ final class ForYouViewModel {
     rebuildCascadeTail(from: index, injectSimilarTo: anchorID)
   }
 
+  private func flushDeferredCascadeWork() {
+    if pendingRankingCascadeSync {
+      pendingRankingCascadeSync = false
+      invalidateRankingMetadataCache()
+      reloadRankingOnly(force: true)
+      return
+    }
+    guard let index = pendingCascadeRebuildIndex else { return }
+    let anchorID = pendingCascadeSimilarAnchorID
+    pendingCascadeRebuildIndex = nil
+    pendingCascadeSimilarAnchorID = nil
+    rebuildCascadeTail(from: index, injectSimilarTo: anchorID)
+  }
+
   private func rebuildCascadeTail(from index: Int, injectSimilarTo anchorID: String?) {
-    guard cascadeViewEnabled, !cascadeFeed.isEmpty else { return }
+    guard !cascadeFeed.isEmpty else { return }
 
     let safeIndex = min(max(index, 0), max(cascadeFeed.count - 1, 0))
     var head = Array(cascadeFeed.prefix(safeIndex + 1))
@@ -576,5 +571,30 @@ final class ForYouViewModel {
     let remaining = max(Self.cascadeFeedLimit - head.count, 0)
     head.append(contentsOf: pool.prefix(remaining))
     cascadeFeed = head
+    syncCascadePages()
+  }
+
+  private func syncCascadePages() {
+    cascadePages = Array(cascadeFeed.prefix(Self.cascadeFeedLimit))
+  }
+
+  private func withTimeout<T: Sendable>(
+    seconds: TimeInterval,
+    operation: @escaping @Sendable @MainActor () async throws -> T
+  ) async throws -> T {
+    try await withThrowingTaskGroup(of: T.self) { group in
+      group.addTask { @MainActor in
+        try await operation()
+      }
+      group.addTask {
+        try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        throw AIServiceError.notAvailable
+      }
+      guard let result = try await group.next() else {
+        throw AIServiceError.notAvailable
+      }
+      group.cancelAll()
+      return result
+    }
   }
 }

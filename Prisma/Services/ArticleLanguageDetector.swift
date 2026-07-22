@@ -26,8 +26,23 @@ enum ArticleLanguageDetector {
   }
 
   static func needsTranslation(article: Article, targetLanguageCode: String) -> Bool {
-    guard let source = detectLanguageCode(for: article) else { return false }
-    return !languageCodesMatch(source, targetLanguageCode)
+    if let source = detectLanguageCode(for: article) {
+      return !languageCodesMatch(source, targetLanguageCode)
+    }
+    if let heuristic = heuristicEnglishLanguageCode(for: article) {
+      return !languageCodesMatch(heuristic, targetLanguageCode)
+    }
+    return false
+  }
+
+  private static func heuristicEnglishLanguageCode(for article: Article) -> String? {
+    let text = sampleText(from: article).trimmingCharacters(in: .whitespacesAndNewlines)
+    guard text.count >= 8 else { return nil }
+    let letters = text.unicodeScalars.filter { CharacterSet.letters.contains($0) }
+    guard !letters.isEmpty else { return nil }
+    let asciiCount = letters.filter { $0.value < 128 }.count
+    guard Double(asciiCount) / Double(letters.count) > 0.9 else { return nil }
+    return "en"
   }
 
   static func languageCodesMatch(_ lhs: String, _ rhs: String) -> Bool {

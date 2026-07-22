@@ -8,6 +8,10 @@ struct TodayView: View {
 
   @State private var isSearchExpanded = false
   @State private var headerScrollOffset: CGFloat = 0
+  @State private var articleActionMenu: Article?
+  @State private var shareItems: [Any] = []
+  @State private var showShare = false
+  @State private var lastPreviewArticleIDs: [String] = []
   @FocusState private var searchFocused: Bool
 
   var body: some View {
@@ -57,27 +61,57 @@ struct TodayView: View {
       }
       .onAppear {
         viewModel.loadIfNeeded()
-        previewStore.refresh(for: viewModel.articles)
+        refreshPreviewsIfNeeded(force: true)
         Task { await viewModel.refreshIfStale() }
       }
-      .onChange(of: viewModel.articles.count) { _, _ in
-        previewStore.refresh(for: viewModel.articles)
+      .onChange(of: viewModel.latestArticles.map(\.id)) { _, ids in
+        refreshPreviewsIfNeeded(articleIDs: ids)
       }
       .onReceive(NotificationCenter.default.publisher(for: .articleTranslationsDidUpdate)) { _ in
-        previewStore.forceRefresh(for: viewModel.articles)
+        previewStore.mergeTranslations(for: viewModel.latestArticles)
       }
       .onReceive(NotificationCenter.default.publisher(for: .feedsDidRefresh)) { _ in
         viewModel.handleFeedsRefreshed()
-        previewStore.refresh(for: viewModel.articles)
+        refreshPreviewsIfNeeded(force: true)
       }
       .onReceive(NotificationCenter.default.publisher(for: .articleLibraryDidChange)) { _ in
         viewModel.reload()
-        previewStore.refresh(for: viewModel.articles)
+        refreshPreviewsIfNeeded(force: true)
       }
       .onChange(of: viewModel.scrollToTopToken) { _, _ in
         if isSearchExpanded {
           isSearchExpanded = false
           searchFocused = false
+        }
+      }
+      .sheet(isPresented: $showShare) {
+        ShareSheet(items: shareItems)
+      }
+      .overlay {
+        if let article = articleActionMenu {
+          ArticleActionMenuOverlay(
+            article: article,
+            collections: viewModel.collections,
+            isInCollection: { viewModel.isArticleInCollection(article, collection: $0) },
+            onToggleLike: {
+              viewModel.toggleLike(article)
+              articleActionMenu = nil
+            },
+            onToggleSave: {
+              viewModel.toggleSaved(article)
+              articleActionMenu = nil
+            },
+            onShare: {
+              shareItems = viewModel.shareItems(for: article)
+              articleActionMenu = nil
+              showShare = true
+            },
+            onAddToCollection: { collection in
+              viewModel.addToCollection(article, collection: collection)
+              articleActionMenu = nil
+            },
+            onDismiss: { articleActionMenu = nil }
+          )
         }
       }
     }
@@ -191,10 +225,51 @@ struct TodayView: View {
   @ViewBuilder
   private func articleRows(_ items: [Article]) -> some View {
     ForEach(items, id: \.id) { article in
-      Button { onSelectArticle(article) } label: {
-        TranslatedArticleCard(article: article, previewStore: previewStore)
-      }
-      .buttonStyle(.plain)
+      TodayArticleRow(
+        article: article,
+        previewStore: previewStore,
+        onSelect: { onSelectArticle(article) },
+        onShowActions: { articleActionMenu = article }
+      )
+      .equatable()
     }
+  }
+
+  private func refreshPreviewsIfNeeded(articleIDs: [String]? = nil, force: Bool = false) {
+    let articles = viewModel.latestArticles
+    let ids = articleIDs ?? articles.map(\.id)
+    if !force, ids == lastPreviewArticleIDs { return }
+    lastPreviewArticleIDs = ids
+    previewStore.refresh(for: articles)
+  }
+}
+
+private struct TodayArticleRow: View, Equatable {
+  let article: Article
+  let previewStore: ArticlePreviewTranslationStore
+  let onSelect: () -> Void
+  let onShowActions: () -> Void
+
+  static func == (lhs: TodayArticleRow, rhs: TodayArticleRow) -> Bool {
+    lhs.article.id == rhs.article.id
+      && lhs.article.isRead == rhs.article.isRead
+      && lhs.article.isSaved == rhs.article.isSaved
+      && lhs.article.isFavorite == rhs.article.isFavorite
+      && lhs.previewStore.revision(for: lhs.article.id) == rhs.previewStore.revision(for: rhs.article.id)
+  }
+
+  var body: some View {
+    TranslatedArticleCard(article: article, previewStore: previewStore)
+      .equatable()
+      .contentShape(Rectangle())
+      .onTapGesture(perform: onSelect)
+      .highPriorityGesture(
+        LongPressGesture(minimumDuration: 0.45)
+          .onEnded { _ in
+            HapticFeedback.medium()
+            onShowActions()
+          }
+      )
+      .accessibilityHint(String(localized: "article.actions.hint"))
   }
 }

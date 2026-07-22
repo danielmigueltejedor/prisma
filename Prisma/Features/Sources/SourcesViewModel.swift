@@ -78,6 +78,10 @@ final class SourcesViewModel {
   }
 
   var displayedSources: [FeedSource] {
+    let key = "\(searchText)|\(selectedStyle)|\(sources.count)"
+    if key == displayedSourcesCacheKey {
+      return cachedDisplayedSources
+    }
     let base: [FeedSource]
     if isSearching {
       let query = searchText.lowercased()
@@ -90,12 +94,24 @@ final class SourcesViewModel {
     } else {
       base = sources
     }
-    return base.filter {
+    let filtered = base.filter {
       ContentStyleFilter.matches(
         style: ContentStyleFilter.style(for: $0),
         selection: selectedStyle
       )
     }
+    cachedDisplayedSources = filtered
+    displayedSourcesCacheKey = key
+    return filtered
+  }
+
+  private var hasLoadedData = false
+  private var cachedDisplayedSources: [FeedSource] = []
+  private var displayedSourcesCacheKey = ""
+
+  private func invalidateDisplayedSourcesCache() {
+    displayedSourcesCacheKey = ""
+    cachedDisplayedSources = []
   }
 
   private func filtered(_ feeds: [RecommendedFeed]) -> [RecommendedFeed] {
@@ -119,8 +135,6 @@ final class SourcesViewModel {
     return result
   }
 
-  private var hasLoadedData = false
-
   func loadIfNeeded() {
     guard !hasLoadedData else { return }
     reload()
@@ -130,6 +144,7 @@ final class SourcesViewModel {
     do {
       sources = try feedSourceRepository.fetchAll()
       hasLoadedData = true
+      invalidateDisplayedSourcesCache()
       _ = try? preferenceRepository.getOrCreate()
     } catch {
       errorMessage = error.localizedDescription

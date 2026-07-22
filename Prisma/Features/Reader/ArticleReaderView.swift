@@ -101,7 +101,10 @@ struct ArticleReaderView: View {
           .background(.ultraThinMaterial)
         }
       }
-      .onAppear { viewModel.onAppear() }
+      .task(id: viewModel.article.id) {
+        await Task.yield()
+        viewModel.onAppear()
+      }
       .onDisappear { viewModel.onDisappear() }
       .fullScreenCover(isPresented: $showImageGallery) {
         ArticleMediaGalleryView(
@@ -163,7 +166,17 @@ struct ArticleReaderView: View {
 
   @ViewBuilder
   private var articleBody: some View {
-    if let html = viewModel.bodyHTML, viewModel.hasReadableInAppContent {
+    if let plain = viewModel.plainBodyText,
+       plain.trimmingCharacters(in: .whitespacesAndNewlines).count >= 80,
+       viewModel.hasReadableInAppContent {
+      Text(plain)
+        .font(PrismaTypography.readerBody(
+          sizeMultiplier: viewModel.readerFontSizeMultiplier,
+          family: viewModel.readerFontFamily
+        ))
+        .foregroundStyle(PrismaColors.textPrimary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    } else if let html = viewModel.bodyHTML, viewModel.hasReadableInAppContent {
       ArticleHTMLView(
         html: html,
         baseURL: normalizedArticleURL(),
@@ -232,7 +245,7 @@ struct ArticleReaderView: View {
             .foregroundStyle(PrismaColors.accentFallback)
         }
 
-        if let author = viewModel.article.authorName {
+        if let author = viewModel.displayAuthorName {
           Text("·")
           Button {
             onOpenAuthor?(author)
@@ -302,81 +315,67 @@ struct ArticleReaderView: View {
     .prismaGlass()
   }
 
+  @ViewBuilder
   private var aiActions: some View {
-    VStack(spacing: PrismaSpacing.sm) {
-      if viewModel.hasSummaryAvailable {
-        aiToggleButton(
-          title: viewModel.showingSummary
-            ? String(localized: "reader.hideSummary")
-            : String(localized: "reader.showSummary"),
-          icon: "sparkles",
-          isActive: viewModel.showingSummary
-        ) {
-          viewModel.showingSummary.toggle()
-        }
-      } else if viewModel.shouldShowSummaryPreparing {
-        aiStatusRow(
-          icon: "sparkles",
-          text: String(localized: "reader.summaryPreparing")
-        )
-      }
-
-      if viewModel.hasComparisonAvailable {
-        aiToggleButton(
-          title: viewModel.showingComparison
-            ? String(localized: "reader.hideComparison")
-            : String(localized: "reader.showComparison"),
-          icon: "arrow.left.arrow.right",
-          isActive: viewModel.showingComparison
-        ) {
-          viewModel.showingComparison.toggle()
-        }
-
-        if viewModel.showingComparison {
-          if !viewModel.verifiedSameStoryArticles.isEmpty {
-            SimilarArticlesSection(
-              articles: viewModel.verifiedSameStoryArticles,
-              onSelect: { article in onSelectArticle?(article) },
-              compact: true,
-              poweredByAI: true
-            )
-          }
-
-          if let unified = viewModel.unifiedStory, !unified.isEmpty {
-            aiResultCard(title: String(localized: "reader.unifiedStory"), text: unified)
-          }
-
-          if let comparison = viewModel.comparisonText {
-            aiResultCard(title: String(localized: "reader.compare"), text: comparison)
+    if viewModel.hasSummaryAvailable
+      || viewModel.hasComparisonAvailable
+      || viewModel.hasContextAvailable {
+      VStack(spacing: PrismaSpacing.sm) {
+        if viewModel.hasSummaryAvailable {
+          aiToggleButton(
+            title: viewModel.showingSummary
+              ? String(localized: "reader.hideSummary")
+              : String(localized: "reader.showSummary"),
+            icon: "sparkles",
+            isActive: viewModel.showingSummary
+          ) {
+            viewModel.showingSummary.toggle()
           }
         }
-      } else if viewModel.isGeneratingComparison {
-        aiStatusRow(
-          icon: "arrow.left.arrow.right",
-          text: String(localized: "reader.comparisonSearching")
-        )
-      }
 
-      if viewModel.hasContextAvailable {
-        aiToggleButton(
-          title: viewModel.showingContext
-            ? String(localized: "reader.hideContext")
-            : String(localized: "reader.showContext"),
-          icon: "info.circle",
-          isActive: viewModel.showingContext
-        ) {
-          viewModel.showingContext.toggle()
+        if viewModel.hasComparisonAvailable {
+          aiToggleButton(
+            title: viewModel.showingComparison
+              ? String(localized: "reader.hideComparison")
+              : String(localized: "reader.showComparison"),
+            icon: "arrow.left.arrow.right",
+            isActive: viewModel.showingComparison
+          ) {
+            viewModel.showingComparison.toggle()
+          }
+
+          if viewModel.showingComparison {
+            if !viewModel.verifiedSameStoryArticles.isEmpty {
+              SimilarArticlesSection(
+                articles: viewModel.verifiedSameStoryArticles,
+                onSelect: { article in onSelectArticle?(article) },
+                compact: true,
+                poweredByAI: true
+              )
+            }
+
+            if let unified = viewModel.unifiedStory, !unified.isEmpty {
+              aiResultCard(title: String(localized: "reader.unifiedStory"), text: unified)
+            }
+
+            if let comparison = viewModel.comparisonText {
+              aiResultCard(title: String(localized: "reader.compare"), text: comparison)
+            }
+          }
         }
-      } else if viewModel.isGeneratingContext {
-        aiStatusRow(
-          icon: "info.circle",
-          text: String(localized: "reader.contextPreparing")
-        )
-      }
 
-      if !viewModel.canUseAI {
-        aiUnavailableHint
-      } else {
+        if viewModel.hasContextAvailable {
+          aiToggleButton(
+            title: viewModel.showingContext
+              ? String(localized: "reader.hideContext")
+              : String(localized: "reader.showContext"),
+            icon: "info.circle",
+            isActive: viewModel.showingContext
+          ) {
+            viewModel.showingContext.toggle()
+          }
+        }
+
         Text(String(localized: "reader.aiDisclaimer"))
           .font(PrismaTypography.caption2())
           .foregroundStyle(PrismaColors.textTertiary)
@@ -404,45 +403,8 @@ struct ArticleReaderView: View {
       .font(PrismaTypography.callout(.medium))
       .padding(PrismaSpacing.md)
       .prismaGlass(cornerRadius: PrismaRadius.md)
-      .opacity(viewModel.canUseAI ? 1 : 0.55)
     }
     .buttonStyle(.plain)
-    .disabled(!viewModel.canUseAI)
-  }
-
-  private func aiStatusRow(icon: String, text: String) -> some View {
-    HStack(spacing: PrismaSpacing.sm) {
-      ProgressView()
-        .controlSize(.small)
-      Image(systemName: icon)
-        .foregroundStyle(PrismaColors.textTertiary)
-      Text(text)
-        .font(PrismaTypography.caption())
-        .foregroundStyle(PrismaColors.textSecondary)
-      Spacer()
-    }
-    .padding(PrismaSpacing.md)
-    .prismaGlass(cornerRadius: PrismaRadius.md)
-  }
-
-  private var aiUnavailableHint: some View {
-    HStack(spacing: PrismaSpacing.xs) {
-      Image(systemName: "apple.intelligence")
-        .foregroundStyle(PrismaColors.textTertiary)
-      Text(aiUnavailableMessage)
-        .font(PrismaTypography.caption())
-        .foregroundStyle(PrismaColors.textSecondary)
-    }
-    .padding(PrismaSpacing.sm)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .prismaGlass(cornerRadius: PrismaRadius.md)
-  }
-
-  private var aiUnavailableMessage: String {
-    if let key = AppleIntelligenceAvailability.current.userMessageKey {
-      return String(localized: String.LocalizationValue(key))
-    }
-    return String(localized: "ai.unavailable.body")
   }
 
   private func aiResultCard(title: String, text: String) -> some View {

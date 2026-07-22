@@ -23,6 +23,8 @@ struct PrismaApp: App {
     }
     dependencies = AppDependencies(modelContainer: container)
     NewsSpeechBridge.dependencies = dependencies
+    dependencies.backgroundContentCoordinator.registerBackgroundTasks()
+    dependencies.backgroundContentCoordinator.scheduleDeferredTasks()
   }
 
   var body: some Scene {

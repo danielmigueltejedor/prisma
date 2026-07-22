@@ -16,6 +16,7 @@ enum PrismaModelContainer {
     ArticleTranslation.self,
     RedditCommentsTranslation.self,
     NewsCluster.self,
+    LocalCorpusEntry.self,
   ])
 
   static func make(inMemory: Bool = false) throws -> ModelContainer {

@@ -12,4 +12,15 @@ final class HTMLSanitizerTests: XCTestCase {
     XCTAssertFalse(result?.contains("script") ?? true)
     XCTAssertTrue(result?.contains("Safe") ?? false)
   }
+
+  func testDecodesNumericAndNamedEntitiesInPlainText() {
+    let input = "expansi&oacute;n en pa&iacute;ses&#32;—&#32;compa&ntilde;&iacute;a"
+    let result = HTMLSanitizer.normalizePlainText(input)
+    XCTAssertEqual(result, "expansión en países — compañía")
+  }
+
+  func testDecodesHexNumericEntities() {
+    let result = HTMLSanitizer.normalizePlainText("hola&#x20;mundo")
+    XCTAssertEqual(result, "hola mundo")
+  }
 }

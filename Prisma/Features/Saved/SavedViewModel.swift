@@ -10,6 +10,8 @@ final class SavedViewModel {
   var selectedCollectionID: UUID?
   var sourceFilter: UUID?
 
+  private(set) var displayedArticles: [Article] = []
+
   private let articleRepository: ArticleRepository
   private let collectionRepository: CollectionRepository
   private let feedSourceRepository: FeedSourceRepository
@@ -59,7 +61,51 @@ final class SavedViewModel {
     }
   }
 
-  var displayedArticles: [Article] {
+  var showsCollectionPicker: Bool {
+    selectedFilter == .saved && !collections.isEmpty
+  }
+
+  var emptyStateIcon: String {
+    if selectedFilter == .saved, selectedCollectionID != nil {
+      return "folder"
+    }
+    return selectedFilter.emptyIcon
+  }
+
+  var emptyStateTitle: String {
+    if selectedFilter == .saved, selectedCollectionID != nil {
+      return String(localized: "saved.empty.collection.title")
+    }
+    return selectedFilter.emptyTitle
+  }
+
+  var emptyStateMessage: String {
+    if selectedFilter == .saved, selectedCollectionID != nil {
+      return String(localized: "saved.empty.collection.message")
+    }
+    return selectedFilter.emptyMessage
+  }
+
+  func loadIfNeeded() {
+    guard !hasLoadedData else { return }
+    reload()
+  }
+
+  func reload() {
+    do {
+      savedArticles = try articleRepository.fetchSaved()
+      favorites = try articleRepository.fetchFavorites()
+      collections = try collectionRepository.fetchAll()
+      hasLoadedData = true
+      rebuildDisplayedArticles()
+    } catch {}
+  }
+
+  func load() {
+    reload()
+  }
+
+  func rebuildDisplayedArticles() {
     var items: [Article]
     switch selectedFilter {
     case .saved:
@@ -75,29 +121,26 @@ final class SavedViewModel {
       let articleIDs = Set(collection.savedArticles.compactMap(\.article?.id))
       items = items.filter { articleIDs.contains($0.id) }
     }
-    return items
+    displayedArticles = items
   }
 
-  func loadIfNeeded() {
-    guard !hasLoadedData else { return }
-    reload()
+  func setFilter(_ filter: SavedFilter) {
+    selectedFilter = filter
+    rebuildDisplayedArticles()
   }
 
-  func reload() {
-    do {
-      savedArticles = try articleRepository.fetchSaved()
-      favorites = try articleRepository.fetchFavorites()
-      collections = try collectionRepository.fetchAll()
-      hasLoadedData = true
-    } catch {}
-  }
-
-  func load() {
-    reload()
+  func setCollectionFilter(_ id: UUID?) {
+    selectedCollectionID = id
+    rebuildDisplayedArticles()
   }
 
   func createCollection(name: String) {
-    _ = try? collectionRepository.create(name: name)
-    load()
+    let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    if let collection = try? collectionRepository.create(name: trimmed) {
+      load()
+      selectedFilter = .saved
+      selectedCollectionID = collection.id
+    }
   }
 }

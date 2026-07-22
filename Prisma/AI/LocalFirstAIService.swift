@@ -25,7 +25,7 @@ struct LocalFirstAIService: AIService {
 
   private func coordinated<T: Sendable>(
     priority: TaskPriority = .utility,
-    _ operation: @escaping @MainActor () async throws -> T
+    _ operation: @escaping @Sendable @MainActor () async throws -> T
   ) async throws -> T {
     if shouldCoordinate {
       return try await AIServiceCoordinator.shared.enqueue(priority: priority, operation: operation)
@@ -35,49 +35,78 @@ struct LocalFirstAIService: AIService {
 
   func summarizeArticle(_ article: Article) async throws -> SummaryDTO {
     let service = active
-    return try await coordinated { try await service.summarizeArticle(article) }
+    let article = MainActorValue(article)
+    return try await coordinated(priority: .userInitiated) { @MainActor in
+      try await service.summarizeArticle(article.value)
+    }
   }
 
   func classifyArticle(_ article: Article) async throws -> [String] {
     let service = active
-    return try await coordinated { try await service.classifyArticle(article) }
+    let article = MainActorValue(article)
+    return try await coordinated { @MainActor in
+      try await service.classifyArticle(article.value)
+    }
   }
 
   func clusterArticles(_ articles: [Article]) async throws -> [ClusterDTO] {
     let service = active
-    return try await coordinated { try await service.clusterArticles(articles) }
+    let articles = MainActorValue(articles)
+    return try await coordinated { @MainActor in
+      try await service.clusterArticles(articles.value)
+    }
   }
 
   func compareSources(cluster: ClusterDTO, articles: [Article]) async throws -> String {
     let service = active
-    return try await coordinated { try await service.compareSources(cluster: cluster, articles: articles) }
+    let articles = MainActorValue(articles)
+    return try await coordinated { @MainActor in
+      try await service.compareSources(cluster: cluster, articles: articles.value)
+    }
   }
 
   func filterSameStoryArticleIDs(anchor: Article, candidates: [Article]) async throws -> [String] {
     let service = active
-    return try await coordinated {
-      try await service.filterSameStoryArticleIDs(anchor: anchor, candidates: candidates)
+    let anchor = MainActorValue(anchor)
+    let candidates = MainActorValue(candidates)
+    return try await coordinated { @MainActor in
+      try await service.filterSameStoryArticleIDs(anchor: anchor.value, candidates: candidates.value)
     }
   }
 
   func compareSameStory(anchor: Article, relatedArticles: [Article]) async throws -> SameStoryComparisonDTO {
     let service = active
-    return try await coordinated { try await service.compareSameStory(anchor: anchor, relatedArticles: relatedArticles) }
+    let anchor = MainActorValue(anchor)
+    let relatedArticles = MainActorValue(relatedArticles)
+    return try await coordinated(priority: .userInitiated) { @MainActor in
+      try await service.compareSameStory(anchor: anchor.value, relatedArticles: relatedArticles.value)
+    }
   }
 
   func rankSimilarArticles(anchor: Article, candidates: [Article], limit: Int) async throws -> [String] {
     let service = active
-    return try await coordinated { try await service.rankSimilarArticles(anchor: anchor, candidates: candidates, limit: limit) }
+    let anchor = MainActorValue(anchor)
+    let candidates = MainActorValue(candidates)
+    return try await coordinated { @MainActor in
+      try await service.rankSimilarArticles(anchor: anchor.value, candidates: candidates.value, limit: limit)
+    }
   }
 
   func generateDailyBriefing(articles: [Article], preferences: UserPreference) async throws -> DailyBriefingDTO {
     let service = active
-    return try await coordinated { try await service.generateDailyBriefing(articles: articles, preferences: preferences) }
+    let articles = MainActorValue(articles)
+    let preferences = MainActorValue(preferences)
+    return try await coordinated { @MainActor in
+      try await service.generateDailyBriefing(articles: articles.value, preferences: preferences.value)
+    }
   }
 
   func explainContext(article: Article) async throws -> ContextExplanationDTO {
     let service = active
-    return try await coordinated(priority: .utility) { try await service.explainContext(article: article) }
+    let article = MainActorValue(article)
+    return try await coordinated(priority: .userInitiated) { @MainActor in
+      try await service.explainContext(article: article.value)
+    }
   }
 
   func translateArticle(
@@ -86,8 +115,9 @@ struct LocalFirstAIService: AIService {
     sourceLanguage: String?
   ) async throws -> TranslationDTO {
     let service = active
-    return try await coordinated(priority: .userInitiated) {
-      try await service.translateArticle(article, to: targetLanguageCode, sourceLanguage: sourceLanguage)
+    let article = MainActorValue(article)
+    return try await coordinated(priority: .userInitiated) { @MainActor in
+      try await service.translateArticle(article.value, to: targetLanguageCode, sourceLanguage: sourceLanguage)
     }
   }
 
@@ -101,4 +131,10 @@ struct LocalFirstAIService: AIService {
       try await service.translatePlainTexts(texts, to: targetLanguageCode, sourceLanguage: sourceLanguage)
     }
   }
+}
+
+/// SwiftData models are main-actor bound; this box is only used while hopping through the AI task queue.
+private struct MainActorValue<Value>: @unchecked Sendable {
+  let value: Value
+  init(_ value: Value) { self.value = value }
 }

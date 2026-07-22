@@ -115,6 +115,12 @@ final class SettingsViewModel {
     PreferencesNotifier.publish()
   }
 
+  func setLocalCorpusLimitMB(_ limit: Int) {
+    preferences?.localCorpusLimitMB = limit
+    save()
+    PreferencesNotifier.publish()
+  }
+
   func addBlockedKeyword() {
     let keyword = blockedKeywordInput.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !keyword.isEmpty else { return }

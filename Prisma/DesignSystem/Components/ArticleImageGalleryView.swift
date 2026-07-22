@@ -103,12 +103,23 @@ private struct ZoomableGalleryImage: View {
 }
 
 struct ArticleMediaCarousel: View {
+  enum Presentation {
+    case full
+    /// Una sola imagen destacada; evita TabView horizontal dentro de un pager vertical.
+    case cascade
+  }
+
   let mediaItems: [ArticleMediaItem]
+  var presentation: Presentation = .full
   var onSelect: (Int) -> Void
 
   var body: some View {
     Group {
-      if mediaItems.count == 1, let item = mediaItems.first {
+      if mediaItems.isEmpty {
+        EmptyView()
+      } else if presentation == .cascade {
+        cascadePreview
+      } else if mediaItems.count == 1, let item = mediaItems.first {
         carouselItem(item, index: 0)
           .frame(maxHeight: 280)
       } else {
@@ -119,6 +130,26 @@ struct ArticleMediaCarousel: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .automatic))
         .frame(height: 280)
+      }
+    }
+    .frame(maxWidth: .infinity)
+    .clipped()
+  }
+
+  @ViewBuilder
+  private var cascadePreview: some View {
+    ZStack(alignment: .topTrailing) {
+      carouselItem(mediaItems[0], index: 0)
+        .frame(maxHeight: 240)
+
+      if mediaItems.count > 1 {
+        Text("+\(mediaItems.count - 1)")
+          .font(PrismaTypography.caption2(.semibold))
+          .foregroundStyle(PrismaColors.textPrimary)
+          .padding(.horizontal, 8)
+          .padding(.vertical, 4)
+          .background(.ultraThinMaterial, in: Capsule())
+          .padding(PrismaSpacing.sm)
       }
     }
   }

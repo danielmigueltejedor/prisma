@@ -11,7 +11,7 @@ enum ReaderImpressionMode {
 @MainActor
 @Observable
 final class ArticleReaderViewModel {
-  private static let candidateFetchLimit = 80
+  private static let candidateFetchLimit = 40
 
   let article: Article
 
@@ -70,12 +70,11 @@ final class ArticleReaderViewModel {
   private let redditCommentsTranslationService: RedditCommentsTranslationService
   private let summaryService: ArticleSummaryService
   private let insightRepository: AIArticleInsightRepository
+  private let localReadingCorpusService: LocalReadingCorpusService?
   private var hasMarkedRead = false
   private var hasLoadedSimilar = false
   private var hasLoadedRedditComments = false
   private var hasStartedComparisonPrefetch = false
-  private var hasStartedContextPrefetch = false
-  private var hasStartedSummaryPrefetch = false
   private var cachedVerifiedPeerIDs: [String] = []
   private var readerTasks: [Task<Void, Never>] = []
   private var openedAt: Date?
@@ -100,6 +99,7 @@ final class ArticleReaderViewModel {
     redditCommentsTranslationService: RedditCommentsTranslationService,
     summaryService: ArticleSummaryService,
     insightRepository: AIArticleInsightRepository,
+    localReadingCorpusService: LocalReadingCorpusService? = nil,
     impressionMode: ReaderImpressionMode = .standard
   ) {
     self.article = article
@@ -115,6 +115,7 @@ final class ArticleReaderViewModel {
     self.redditCommentsTranslationService = redditCommentsTranslationService
     self.summaryService = summaryService
     self.insightRepository = insightRepository
+    self.localReadingCorpusService = localReadingCorpusService
     self.isSaved = article.isSaved
     self.isFavorite = article.isFavorite
     self.cachedResolvedSource = article.feedSource
@@ -128,28 +129,14 @@ final class ArticleReaderViewModel {
       return
     }
 
+    loadCachedAIContent()
+
     cachedOriginalBodyHTML = Self.resolveOriginalBodyHTML(for: article)
     cachedPlainBodyText = cachedOriginalBodyHTML.flatMap { HTMLSanitizer.stripHTML($0) }
     if cachedOriginalBodyHTML != nil {
       hasPreparedPresentation = true
     }
 
-    if let cached = summaryService.cachedSummary(for: article) {
-      let cleaned = AITextFormatter.clean(cached.summary)
-      if !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        aiSummary = cleaned
-      }
-    }
-    if let cachedComparison = try? insightRepository.find(articleId: article.id, kind: .comparison) {
-      comparisonText = AITextFormatter.clean(cachedComparison.text)
-      if let unified = cachedComparison.unifiedStoryText, !unified.isEmpty {
-        unifiedStory = AITextFormatter.clean(unified)
-      }
-      cachedVerifiedPeerIDs = cachedComparison.relatedArticleIds
-    }
-    if let cachedContext = try? insightRepository.find(articleId: article.id, kind: .context) {
-      contextExplanation = AITextFormatter.clean(cachedContext.text)
-    }
     if translationService.needsTranslation(for: article),
        let cached = translationService.cachedTranslation(for: article) {
       translation = cached
@@ -158,30 +145,22 @@ final class ArticleReaderViewModel {
 
   var hasOnDeviceAI: Bool { AIServiceFactory.hasFreeOnDeviceAI }
 
-  var canUseAI: Bool {
-    #if DEBUG
-    return true
-    #else
-    return hasOnDeviceAI
-    #endif
-  }
+  var canUseAI: Bool { hasOnDeviceAI }
 
   var hasSummaryAvailable: Bool {
     guard let aiSummary else { return false }
     return !aiSummary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
-  var shouldShowSummaryPreparing: Bool {
-    canUseAI && !hasSummaryAvailable && (isGeneratingSummary || hasStartedSummaryPrefetch)
-  }
-
   var hasComparisonAvailable: Bool {
-    guard comparisonText != nil else { return false }
+    guard let comparisonText,
+          !comparisonText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
     return !verifiedSameStoryArticles.isEmpty || !cachedVerifiedPeerIDs.isEmpty
   }
 
   var hasContextAvailable: Bool {
-    contextExplanation != nil
+    guard let contextExplanation else { return false }
+    return !contextExplanation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
   var hasSameTopicCoverage: Bool {
@@ -205,6 +184,10 @@ final class ArticleReaderViewModel {
       feedURL: article.originalFeedUrl,
       siteURL: article.feedSource?.siteURL
     ) == .reddit
+  }
+
+  var displayAuthorName: String? {
+    ArticleAuthorDisplay.displayName(for: article)
   }
 
   var isLiveCoverage: Bool {
@@ -251,7 +234,7 @@ final class ArticleReaderViewModel {
 
   var plainBodyText: String? {
     if isShowingTranslation, let translation {
-      return translation.translatedBody
+      return HTMLSanitizer.normalizePlainText(translation.translatedBody)
     }
     return cachedPlainBodyText
   }
@@ -283,20 +266,14 @@ final class ArticleReaderViewModel {
     try? preferenceRepository.save()
   }
 
+  var isCascadePresentationReady: Bool { hasPreparedPresentation }
+
   func onAppear() {
     openedAt = Date()
     loadCachedTranslationIfNeeded()
 
     if impressionMode == .cascadeTraining {
-      prepareForCascadeDisplay()
-      if needsTranslation, translation == nil {
-        enqueueReaderTask(priority: .utility) {
-          await self.prepareTranslation()
-        }
-      }
-      if isLiveCoverage {
-        reloadLiveEntries()
-      }
+      scheduleCascadeAIPrefetchIfNeeded()
       return
     }
 
@@ -313,26 +290,26 @@ final class ArticleReaderViewModel {
       }
     }
 
-    if canUseAI, !hasSummaryAvailable, !hasStartedSummaryPrefetch {
-      hasStartedSummaryPrefetch = true
-      enqueueReaderTask(priority: .utility) {
-        await self.prefetchSummaryIfNeeded()
-      }
-    }
-
     if !hasLoadedSimilar {
       hasLoadedSimilar = true
       enqueueReaderTask(priority: .utility) {
+        try? await Task.sleep(nanoseconds: 3_000_000_000)
+        guard !Task.isCancelled else { return }
         await self.loadRelatedContentInBackground()
       }
     }
 
     reloadLiveEntries()
     startLiveRefreshIfNeeded()
+    scheduleAIPrefetchIfNeeded()
+    if isRedditPost {
+      scheduleRedditCommentsIfNeeded()
+    }
   }
 
   func onDisappear() {
     if impressionMode == .cascadeTraining {
+      cancelBackgroundWork()
       stopLiveRefresh()
       openedAt = nil
       return
@@ -352,6 +329,9 @@ final class ArticleReaderViewModel {
       try? articleService.markRead(article)
     }
     try? articleService.recordDwellTime(article, seconds: seconds)
+    if seconds >= 2 {
+      localReadingCorpusService?.indexArticleIfNeeded(article)
+    }
     self.openedAt = nil
   }
 
@@ -359,17 +339,66 @@ final class ArticleReaderViewModel {
     showingOriginal.toggle()
   }
 
+  func cancelBackgroundWork() {
+    readerTasks.forEach { $0.cancel() }
+    readerTasks.removeAll()
+  }
+
+  func scheduleAIPrefetchIfNeeded(delayNanoseconds: UInt64 = 2_000_000_000) {
+    guard canUseAI else { return }
+    enqueueReaderTask(priority: .utility) {
+      if delayNanoseconds > 0 {
+        try? await Task.sleep(nanoseconds: delayNanoseconds)
+      }
+      guard !Task.isCancelled else { return }
+      await self.prefetchSummaryIfNeeded()
+      guard !Task.isCancelled else { return }
+      await self.prefetchContextIfNeeded()
+    }
+  }
+
+  func scheduleCascadeAIPrefetchIfNeeded(delayNanoseconds: UInt64 = 1_500_000_000) {
+    guard canUseAI else { return }
+    enqueueReaderTask(priority: .utility) {
+      if delayNanoseconds > 0 {
+        try? await Task.sleep(nanoseconds: delayNanoseconds)
+      }
+      guard !Task.isCancelled else { return }
+      await self.prefetchSummaryIfNeeded()
+      guard !Task.isCancelled else { return }
+      await self.prefetchContextIfNeeded()
+      guard !Task.isCancelled else { return }
+      await self.prefetchCascadeComparisonIfNeeded()
+    }
+  }
+
+  private func prefetchCascadeComparisonIfNeeded() async {
+    guard !hasComparisonAvailable else { return }
+    if sameTopicArticles.isEmpty {
+      await loadRelatedContentInBackground()
+    } else {
+      await prefetchComparisonIfNeeded()
+    }
+  }
+
   func prefetchSummaryIfNeeded() async {
     guard canUseAI, !hasSummaryAvailable else { return }
     guard !isGeneratingSummary else { return }
 
     isGeneratingSummary = true
+    errorMessage = nil
     defer { isGeneratingSummary = false }
 
-    if let saved = await summaryService.ensureSummary(for: article) {
+    switch await summaryService.ensureSummary(for: article) {
+    case .success(let saved):
       let cleaned = AITextFormatter.clean(saved.summary)
-      guard !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+      guard !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        errorMessage = String(localized: "error.ai.empty")
+        return
+      }
       aiSummary = cleaned
+    case .failure(let error):
+      errorMessage = error.localizedDescription
     }
   }
 
@@ -425,6 +454,10 @@ final class ArticleReaderViewModel {
     do {
       let result = try await aiService.explainContext(article: article)
       let generated = AITextFormatter.clean(result.explanation)
+      guard !generated.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        errorMessage = String(localized: "error.ai.empty")
+        return
+      }
       contextExplanation = generated
       _ = try? insightRepository.save(articleId: article.id, kind: .context, text: generated)
     } catch {
@@ -516,13 +549,21 @@ final class ArticleReaderViewModel {
   }
 
   func toggleSaved() {
+    let wasSaved = article.isSaved
     try? articleService.toggleSaved(article)
     isSaved = article.isSaved
+    if article.isSaved, !wasSaved {
+      ArticleTrainingNotifier.publishSave(articleID: article.id)
+    }
   }
 
   func toggleFavorite() {
+    let wasFavorite = article.isFavorite
     try? articleService.toggleFavorite(article)
     isFavorite = article.isFavorite
+    if article.isFavorite, !wasFavorite {
+      ArticleTrainingNotifier.publishLike(articleID: article.id)
+    }
   }
 
   func syncLibraryState() {
@@ -531,20 +572,54 @@ final class ArticleReaderViewModel {
   }
 
   /// Prepara título, cuerpo e imágenes de forma síncrona para la cascada.
-  func prepareForCascadeDisplay() {
-    if cachedOriginalBodyHTML == nil {
-      cachedOriginalBodyHTML = Self.resolveOriginalBodyHTML(for: article)
-      cachedPlainBodyText = cachedOriginalBodyHTML.flatMap { HTMLSanitizer.stripHTML($0) }
+  private func loadCachedAIContent() {
+    if let cached = summaryService.cachedSummary(for: article) {
+      let cleaned = AITextFormatter.clean(cached.summary)
+      if !cleaned.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        aiSummary = cleaned
+      }
     }
-    if mediaItems.isEmpty {
-      mediaItems = ArticleMediaExtractor.mediaItems(for: article)
+    if let cachedComparison = try? insightRepository.find(articleId: article.id, kind: .comparison) {
+      comparisonText = AITextFormatter.clean(cachedComparison.text)
+      if let unified = cachedComparison.unifiedStoryText, !unified.isEmpty {
+        unifiedStory = AITextFormatter.clean(unified)
+      }
+      cachedVerifiedPeerIDs = cachedComparison.relatedArticleIds
     }
+    if let cachedContext = try? insightRepository.find(articleId: article.id, kind: .context) {
+      contextExplanation = AITextFormatter.clean(cachedContext.text)
+    }
+  }
+
+  func prepareForCascadeDisplayIfNeeded() async {
+    guard !hasPreparedPresentation else { return }
+
+    loadCachedTranslationIfNeeded()
+    loadCachedAIContent()
     if cachedResolvedSource == nil {
       cachedResolvedSource = try? feedSourceRepository.find(by: article.sourceId)
     }
+
+    await Task.yield()
+    guard !Task.isCancelled else { return }
+
+    if cachedOriginalBodyHTML == nil {
+      let html = Self.resolveOriginalBodyHTML(for: article)
+      let plain = await Task.detached(priority: .utility) {
+        html.flatMap { HTMLSanitizer.stripHTML($0) }
+      }.value
+      cachedOriginalBodyHTML = html
+      cachedPlainBodyText = plain
+    }
+
+    if mediaItems.isEmpty {
+      mediaItems = ArticleMediaExtractor.mediaItems(for: article)
+    }
+
     if isLiveCoverage {
       reloadLiveEntries()
     }
+
     hasPreparedPresentation = true
   }
 
@@ -552,6 +627,7 @@ final class ArticleReaderViewModel {
     guard !article.isFavorite else { return }
     try? articleService.toggleFavorite(article)
     isFavorite = article.isFavorite
+    ArticleTrainingNotifier.publishLike(articleID: article.id)
   }
 
   private func loadCachedTranslationIfNeeded() {
@@ -609,35 +685,6 @@ final class ArticleReaderViewModel {
     similarArticlesPoweredByAI = false
     hydrateVerifiedPeers(from: candidates)
 
-    guard canUseAI else { return }
-
-    isLoadingAISimilarArticles = true
-    let similarService = SimilarArticlesService()
-    if let aiRanked = try? await similarService.aiRelated(
-      to: article,
-      from: candidates,
-      aiService: aiService,
-      limit: 8
-    ), !aiRanked.isEmpty {
-      similarArticles = aiRanked
-      similarArticlesPoweredByAI = true
-    }
-    isLoadingAISimilarArticles = false
-
-    try? await Task.sleep(nanoseconds: 1_500_000_000)
-    guard !Task.isCancelled else { return }
-
-    if !hasStartedContextPrefetch {
-      hasStartedContextPrefetch = true
-      await prefetchContextIfNeeded()
-    }
-
-    guard !sameTopicArticles.isEmpty, !hasStartedComparisonPrefetch else { return }
-
-    try? await Task.sleep(nanoseconds: 2_000_000_000)
-    guard !Task.isCancelled else { return }
-
-    hasStartedComparisonPrefetch = true
     await prefetchComparisonIfNeeded()
   }
 
@@ -676,11 +723,16 @@ final class ArticleReaderViewModel {
   }
 
   private static func resolveOriginalBodyHTML(for article: Article) -> String? {
+    let isReddit = FeedPlatform.detect(feedURL: article.originalFeedUrl) == .reddit
     for html in [article.content, article.summary] {
       guard let html, !html.isEmpty else { continue }
-      let plain = HTMLSanitizer.stripHTML(html) ?? ""
-      if !plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-        return html
+      let cleanedHTML = isReddit ? (RedditContentNormalizer.cleanHTML(html) ?? html) : html
+      let plain = HTMLSanitizer.stripHTML(cleanedHTML) ?? ""
+      let normalizedPlain = isReddit
+        ? RedditContentNormalizer.cleanPlainText(plain)
+        : plain.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !normalizedPlain.isEmpty {
+        return cleanedHTML
       }
     }
     return nil

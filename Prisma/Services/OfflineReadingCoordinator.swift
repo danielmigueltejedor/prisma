@@ -4,19 +4,19 @@ import Foundation
 final class OfflineReadingCoordinator {
   private static let staleFeedInterval: TimeInterval = 30 * 60
   private static let prefetchCooldown: TimeInterval = 5 * 60
-  private static let translationPrefetchLimit = 3
+  private static let translationPrefetchLimit = 5
   private static let imagePrefetchLimit = 15
-  private static let redditPrefetchLimit = 3
+  private static let redditPrefetchLimit = 4
 
   private let feedService: FeedService
   private let articleRepository: ArticleRepository
-  private let feedSourceRepository: FeedSourceRepository
   private let preferenceRepository: PreferenceRepository
   private let translationService: ArticleTranslationService
-  private let recommendationEngine: RecommendationEngine
+  private let sharedRankingService: SharedArticleRankingService
   private let previewStore: ArticlePreviewTranslationStore
   private let redditCommentsService: RedditCommentsService
   private let redditCommentsTranslationService: RedditCommentsTranslationService
+  private weak var backgroundWorkGate: AppBackgroundWorkGate?
 
   private var prefetchTask: Task<Void, Never>?
   private var lastPrefetchAt: Date?
@@ -27,23 +27,26 @@ final class OfflineReadingCoordinator {
     feedSourceRepository: FeedSourceRepository,
     preferenceRepository: PreferenceRepository,
     translationService: ArticleTranslationService,
-    recommendationEngine: RecommendationEngine,
+    sharedRankingService: SharedArticleRankingService,
     previewStore: ArticlePreviewTranslationStore,
     redditCommentsService: RedditCommentsService,
-    redditCommentsTranslationService: RedditCommentsTranslationService
+    redditCommentsTranslationService: RedditCommentsTranslationService,
+    backgroundWorkGate: AppBackgroundWorkGate? = nil
   ) {
     self.feedService = feedService
     self.articleRepository = articleRepository
-    self.feedSourceRepository = feedSourceRepository
     self.preferenceRepository = preferenceRepository
     self.translationService = translationService
-    self.recommendationEngine = recommendationEngine
+    self.sharedRankingService = sharedRankingService
     self.previewStore = previewStore
     self.redditCommentsService = redditCommentsService
     self.redditCommentsTranslationService = redditCommentsTranslationService
+    self.backgroundWorkGate = backgroundWorkGate
+    _ = feedSourceRepository
   }
 
   func schedulePrefetch() {
+    guard backgroundWorkGate?.shouldDeferHeavyWork != true else { return }
     guard !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
     if let lastPrefetchAt, Date().timeIntervalSince(lastPrefetchAt) < Self.prefetchCooldown {
       return
@@ -56,11 +59,17 @@ final class OfflineReadingCoordinator {
     }
   }
 
+  func cancelPrefetch() {
+    prefetchTask?.cancel()
+    prefetchTask = nil
+  }
+
   private func performPrefetch() async {
+    guard backgroundWorkGate?.shouldDeferHeavyWork != true else { return }
     guard !Task.isCancelled else { return }
     await refreshFeedsIfStale()
     guard !Task.isCancelled else { return }
-    guard let articles = try? interestArticles() else { return }
+    guard let articles = try? await interestArticles() else { return }
 
     lastPrefetchAt = .now
     previewStore.refresh(for: articles)
@@ -73,38 +82,16 @@ final class OfflineReadingCoordinator {
 
   private func refreshFeedsIfStale() async {
     let lastRefresh = try? preferenceRepository.getOrCreate().lastRefreshAt
-    let isStale = lastRefresh.map { Date().timeIntervalSince($0) >= Self.staleFeedInterval } ?? true
+    guard lastRefresh != nil else { return }
+    let isStale = lastRefresh.map { Date().timeIntervalSince($0) >= Self.staleFeedInterval } ?? false
     guard isStale else { return }
     _ = try? await feedService.refreshAll()
   }
 
-  private func interestArticles() throws -> [Article] {
-    let prefs = try preferenceRepository.getOrCreate()
-    let blockedSources = try feedSourceRepository.fetchBlockedSourceIds()
+  private func interestArticles() async throws -> [Article] {
+    let snapshot = try await sharedRankingService.ranking(limit: 200)
+    let ranked = snapshot.ranked
     let all = try articleRepository.fetchAll(limit: 200)
-    let sources = try feedSourceRepository.fetchAll()
-    let sourcesById = Dictionary(uniqueKeysWithValues: sources.map { ($0.id, $0) })
-    let favorites = Set(try feedSourceRepository.fetchFavorites().map(\.id))
-    let savedCategories = Set(all.filter(\.isSaved).flatMap(\.categoryNames))
-    let readSourceCounts = Dictionary(
-      all.filter(\.isRead).map { ($0.sourceId, 1) },
-      uniquingKeysWith: +
-    )
-    let interest = ReadingInterestProfiler.build(
-      from: all,
-      favoriteSourceIds: favorites,
-      sourcesById: sourcesById
-    )
-
-    let ranked = recommendationEngine.rank(
-      articles: all,
-      favoriteSourceIds: favorites,
-      savedCategoryNames: savedCategories,
-      readSourceCounts: readSourceCounts,
-      blockedKeywords: prefs.blockedKeywords,
-      blockedSourceIds: blockedSources,
-      interest: interest
-    )
 
     var picks: [Article] = []
     var seen = Set<String>()
@@ -119,6 +106,7 @@ final class OfflineReadingCoordinator {
   }
 
   private func prefetchTranslations(for articles: [Article]) async {
+    var translated: [Article] = []
     var count = 0
     for article in articles {
       guard !Task.isCancelled else { return }
@@ -126,11 +114,14 @@ final class OfflineReadingCoordinator {
       guard translationService.needsTranslation(for: article) else { continue }
       guard translationService.cachedTranslation(for: article) == nil else { continue }
       if await translationService.ensureTranslation(for: article) != nil {
+        translated.append(article)
         count += 1
       }
       await Task.yield()
     }
-    previewStore.refresh(for: articles)
+    if !translated.isEmpty {
+      previewStore.mergeTranslations(for: translated)
+    }
   }
 
   private func prefetchImages(for articles: [Article]) async {

@@ -36,6 +36,9 @@
         }
       }
     },
+    "+%lld" : {
+
+    },
     "action.add" : {
       "localizations" : {
         "en" : {
@@ -80,6 +83,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cerrar"
+          }
+        }
+      }
+    },
+    "action.delete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar"
           }
         }
       }
@@ -313,6 +332,7 @@
       }
     },
     "ai.unavailable.body" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -425,6 +445,22 @@
         }
       }
     },
+    "article.actions.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press and hold for more actions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado para más acciones."
+          }
+        }
+      }
+    },
     "article.live" : {
       "localizations" : {
         "en" : {
@@ -469,6 +505,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Guardado"
+          }
+        }
+      }
+    },
+    "article.saveToCollection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to collection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar en colección"
           }
         }
       }
@@ -633,6 +685,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desliza hacia arriba para la siguiente noticia"
+          }
+        }
+      }
+    },
+    "cascade.readFull" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read full article"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leer artículo completo"
           }
         }
       }
@@ -861,6 +929,22 @@
         }
       }
     },
+    "error.ai.empty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not generate AI content for this article. Try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo generar contenido de IA para este artículo. Inténtalo de nuevo en un momento."
+          }
+        }
+      }
+    },
     "error.ai.notAvailable" : {
       "localizations" : {
         "en" : {
@@ -1057,6 +1141,7 @@
       }
     },
     "foryou.cluster.count %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1073,6 +1158,7 @@
       }
     },
     "foryou.clusters" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1284,6 +1370,7 @@
       }
     },
     "foryou.smartFeed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1670,7 +1757,24 @@
         }
       }
     },
+    "onboarding.sources.emptyFilter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another category or search the full catalog."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba otra categoría o busca en todo el catálogo."
+          }
+        }
+      }
+    },
     "onboarding.sources.pick" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1686,18 +1790,34 @@
         }
       }
     },
-    "onboarding.sources.subtitle" : {
+    "onboarding.sources.selected %lld" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You choose what to read"
+            "value" : "%lld selected (max. 10)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tú eliges qué leer"
+            "value" : "%lld seleccionadas (máx. 10)"
+          }
+        }
+      }
+    },
+    "onboarding.sources.subtitle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter by topic or search our catalog"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtra por tema o busca en el catálogo"
           }
         }
       }
@@ -2395,6 +2515,7 @@
       }
     },
     "reader.comparisonSearching" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2427,6 +2548,7 @@
       }
     },
     "reader.contextPreparing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2721,13 +2843,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open in Safari"
+            "value" : "Open in browser"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir en Safari"
+            "value" : "Abrir en navegador"
           }
         }
       }
@@ -3042,6 +3164,7 @@
       }
     },
     "reader.summaryPreparing" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3293,6 +3416,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todas"
+          }
+        }
+      }
+    },
+    "saved.empty.collection.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add saved articles to this collection from the reader."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade artículos guardados a esta colección desde el lector."
+          }
+        }
+      }
+    },
+    "saved.empty.collection.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collection is empty"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Colección vacía"
           }
         }
       }
@@ -3651,6 +3806,7 @@
       }
     },
     "settings.cascadeView" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3667,6 +3823,7 @@
       }
     },
     "settings.cascadeView.beta" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3683,6 +3840,7 @@
       }
     },
     "settings.cascadeView.hint" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3806,6 +3964,134 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "País de origen"
+          }
+        }
+      }
+    },
+    "settings.localCorpus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local reading memory"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memoria local de lectura"
+          }
+        }
+      }
+    },
+    "settings.localCorpus.128mb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "128 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "128 MB"
+          }
+        }
+      }
+    },
+    "settings.localCorpus.256mb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "256 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "256 MB"
+          }
+        }
+      }
+    },
+    "settings.localCorpus.512mb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 MB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "512 MB"
+          }
+        }
+      }
+    },
+    "settings.localCorpus.1024mb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 GB"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 GB"
+          }
+        }
+      }
+    },
+    "settings.localCorpus.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keeps articles you read for faster search and on-device AI context."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda artículos leídos para búsqueda rápida y contexto de IA local."
+          }
+        }
+      }
+    },
+    "settings.localCorpus.off" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivado"
+          }
+        }
+      }
+    },
+    "settings.localCorpus.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storage limit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Límite de almacenamiento"
           }
         }
       }
@@ -4451,6 +4737,22 @@
         }
       }
     },
+    "sources.row.actions.hint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press and hold for more actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado para más acciones"
+          }
+        }
+      }
+    },
     "sources.search" : {
       "localizations" : {
         "en" : {
@@ -4516,6 +4818,7 @@
       }
     },
     "sources.yours" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

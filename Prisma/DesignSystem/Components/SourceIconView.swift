@@ -6,23 +6,26 @@ struct SourceIconView: View {
   var platform: FeedPlatform = .news
   var size: CGFloat = 32
 
+  @State private var loadedImage: UIImage?
+
+  private static let faviconDecodePixelSize: CGFloat = 128
+
+  private var faviconURL: URL? {
+    FaviconURLBuilder.url(siteURL: siteURL, feedURL: feedURL)
+  }
+
   var body: some View {
     Group {
       if let asset = platform.assetName {
         Image(asset)
           .resizable()
           .aspectRatio(contentMode: .fill)
-      } else if let url = FaviconURLBuilder.url(siteURL: siteURL, feedURL: feedURL) {
-        AsyncImage(url: url) { phase in
-          switch phase {
-          case .success(let image):
-            image
-              .resizable()
-              .aspectRatio(contentMode: .fill)
-          default:
-            placeholder
-          }
-        }
+      } else if let loadedImage {
+        Image(uiImage: loadedImage)
+          .resizable()
+          .interpolation(.high)
+          .antialiased(true)
+          .aspectRatio(contentMode: .fill)
       } else {
         placeholder
       }
@@ -34,6 +37,16 @@ struct SourceIconView: View {
         .strokeBorder(PrismaColors.separator.opacity(0.5), lineWidth: 0.5)
     }
     .accessibilityHidden(true)
+    .task(id: faviconURL) {
+      guard let faviconURL else {
+        loadedImage = nil
+        return
+      }
+      loadedImage = await ArticleImageLoader.image(
+        for: faviconURL,
+        maxPixelSize: Self.faviconDecodePixelSize
+      )
+    }
   }
 
   private var placeholder: some View {

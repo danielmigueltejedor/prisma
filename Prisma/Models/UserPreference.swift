@@ -14,6 +14,9 @@ final class UserPreference {
   var weatherLocationQuery: String?
   var cascadeViewEnabled: Bool = false
   var cascadeSeenArticleIDs: [String] = []
+  var localCorpusLimitMB: Int = UserPreference.defaultLocalCorpusLimitMB
+
+  static let defaultLocalCorpusLimitMB = 256
 
   var appearanceMode: AppearanceMode {
     get { AppearanceMode(rawValue: appearanceModeRaw) ?? .system }
@@ -36,7 +39,8 @@ final class UserPreference {
     homeCountryCode: String? = nil,
     weatherLocationQuery: String? = nil,
     cascadeViewEnabled: Bool = false,
-    cascadeSeenArticleIDs: [String] = []
+    cascadeSeenArticleIDs: [String] = [],
+    localCorpusLimitMB: Int = UserPreference.defaultLocalCorpusLimitMB
   ) {
     self.id = id
     self.hasCompletedOnboarding = hasCompletedOnboarding
@@ -49,6 +53,7 @@ final class UserPreference {
     self.weatherLocationQuery = weatherLocationQuery
     self.cascadeViewEnabled = cascadeViewEnabled
     self.cascadeSeenArticleIDs = cascadeSeenArticleIDs
+    self.localCorpusLimitMB = localCorpusLimitMB
   }
 
   var homeCountry: NewsCountry {

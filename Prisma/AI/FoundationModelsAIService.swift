@@ -8,6 +8,7 @@ import FoundationModels
 struct FoundationModelsAIService: AIService {
   private let generalModel = SystemLanguageModel.default
   private let taggingModel = SystemLanguageModel(useCase: .contentTagging)
+  private let sessionCache = FoundationModelSessionCache()
 
   static var isSupported: Bool {
     AppleIntelligenceAvailability.current.isReady
@@ -29,7 +30,7 @@ struct FoundationModelsAIService: AIService {
     \(body.prefix(6000))
     """
 
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let text = try await session.respond(to: prompt).content
     return SummaryDTO(
       articleId: article.id,
@@ -47,7 +48,7 @@ struct FoundationModelsAIService: AIService {
 
     \(article.title)
     """
-    let session = LanguageModelSession(model: taggingModel)
+    let session = sessionCache.tagging(model: taggingModel)
     let text = try await session.respond(to: prompt).content
     return text
       .split(separator: ",")
@@ -82,7 +83,7 @@ struct FoundationModelsAIService: AIService {
     \(blocks.joined(separator: "\n\n"))
     """
 
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let synthesis = try await session.respond(to: prompt).content
     let parsed = Self.parseBatchedClusterResponse(synthesis, groups: groups)
     if !parsed.isEmpty { return parsed }
@@ -106,7 +107,7 @@ struct FoundationModelsAIService: AIService {
 
     Escribe un titular unificado y un párrafo de síntesis en español.
     """
-    let activeSession = session ?? LanguageModelSession(model: generalModel)
+    let activeSession = session ?? sessionCache.general(model: generalModel)
     let synthesis = try await activeSession.respond(to: prompt).content
     let headline = synthesis.components(separatedBy: "\n").first ?? "Tema del día"
 
@@ -186,7 +187,7 @@ struct FoundationModelsAIService: AIService {
 
     \(blocks.joined(separator: "\n\n"))
     """
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     return try await session.respond(to: prompt).content
   }
 
@@ -216,7 +217,7 @@ struct FoundationModelsAIService: AIService {
     Si ninguno coincide, responde exactamente: NONE
     Un ID por línea, sin otro texto.
     """
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let response = try await session.respond(to: prompt).content
     let validIDs = Set(candidates.map(\.id))
     return SameStoryResponseParser.parseVerifiedIDs(response, validIDs: validIDs)
@@ -252,7 +253,7 @@ struct FoundationModelsAIService: AIService {
 
     \(blocks.joined(separator: "\n\n"))
     """
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let response = try await session.respond(to: prompt).content
     return SameStoryResponseParser.parse(response)
   }
@@ -280,7 +281,7 @@ struct FoundationModelsAIService: AIService {
     \(lines.joined(separator: "\n"))
     """
 
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let response = try await session.respond(to: prompt).content
     let validIDs = Set(shortlist.map(\.id))
     return response
@@ -318,7 +319,7 @@ struct FoundationModelsAIService: AIService {
     Fuente: \(article.sourceName)
     Texto: \(body.prefix(4000))
     """
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let text = try await session.respond(to: prompt).content
     return ContextExplanationDTO(articleId: article.id, explanation: text)
   }
@@ -352,7 +353,7 @@ struct FoundationModelsAIService: AIService {
     BODY:
     \(body.prefix(8000))
   """
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let response = try await session.respond(to: prompt).content
     let parsed = TranslationResponseParser.parse(response, fallbackTitle: article.title)
     return TranslationDTO(
@@ -389,7 +390,7 @@ struct FoundationModelsAIService: AIService {
 
     \(numbered.prefix(12_000))
     """
-    let session = LanguageModelSession(model: generalModel)
+    let session = sessionCache.general(model: generalModel)
     let response = try await session.respond(to: prompt).content
     let parsed = PlainTextBatchTranslationParser.parse(response, expectedCount: texts.count)
     if parsed.allSatisfy(\.isEmpty) {
@@ -404,6 +405,30 @@ struct FoundationModelsAIService: AIService {
 
   private func articleBody(for article: Article) -> String {
     HTMLSanitizer.stripHTML(article.content ?? article.summary) ?? article.title
+  }
+}
+
+private final class FoundationModelSessionCache: @unchecked Sendable {
+  private let lock = NSLock()
+  private var general: LanguageModelSession?
+  private var tagging: LanguageModelSession?
+
+  func general(model: SystemLanguageModel) -> LanguageModelSession {
+    lock.lock()
+    defer { lock.unlock() }
+    if let general { return general }
+    let created = LanguageModelSession(model: model)
+    general = created
+    return created
+  }
+
+  func tagging(model: SystemLanguageModel) -> LanguageModelSession {
+    lock.lock()
+    defer { lock.unlock() }
+    if let tagging { return tagging }
+    let created = LanguageModelSession(model: model)
+    tagging = created
+    return created
   }
 }
 #endif

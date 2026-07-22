@@ -96,11 +96,20 @@
 		92E49A6EFDE556F6BDA72930 /* FeedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F6375536EE22441158AF073 /* FeedService.swift */; };
 		95B1B185E996C7F7AD13DFFA /* TranslationDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F26484FE9E88008FBE0CD9C /* TranslationDTO.swift */; };
 		9698FEE3CAB250C486EA126D /* OfflineReadingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1319EFFBF25CEE6B113B356F /* OfflineReadingCoordinator.swift */; };
+		SHAREDRANK001BUILD /* SharedArticleRankingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHAREDRANK001REF /* SharedArticleRankingService.swift */; };
 		BGTRANSBUILD001 /* BackgroundTranslationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BGTRANSREF001 /* BackgroundTranslationCoordinator.swift */; };
+		AADBUILD001 /* ArticleAuthorDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AADREF001 /* ArticleAuthorDisplay.swift */; };
+		LCEBUILD001 /* LocalCorpusEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = LCEREF001 /* LocalCorpusEntry.swift */; };
+		LCRBUILD001 /* LocalCorpusRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = LCRREF001 /* LocalCorpusRepository.swift */; };
+		LRCSBUILD001 /* LocalReadingCorpusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = LRCSREF001 /* LocalReadingCorpusService.swift */; };
+		RCNBUILD001 /* RedditContentNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = RCNREF001 /* RedditContentNormalizer.swift */; };
+		BGCONTENTBUILD001 /* BackgroundContentCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BGCONTENTREF001 /* BackgroundContentCoordinator.swift */; };
 		RECOMMREASONBUILD001 /* RecommendationReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = RECOMMREASONREF001 /* RecommendationReason.swift */; };
 		NETCONNBUILD001 /* NetworkConnectivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = NETCONNREF001 /* NetworkConnectivityMonitor.swift */; };
 		OFFLINEBANNERBUILD001 /* OfflineBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = OFFLINEBANNERREF001 /* OfflineBanner.swift */; };
 		SHEETNAVBUILD001 /* SheetNavigationQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHEETNAVREF001 /* SheetNavigationQueue.swift */; };
+		BGWGATEBUILD001 /* AppBackgroundWorkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BGWGATEREF001 /* AppBackgroundWorkGate.swift */; };
+		READERSHEETBUILD001 /* ArticleReaderSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = READERSHEETREF001 /* ArticleReaderSheet.swift */; };
 		9764F808ADEC4FF4EF4225F7 /* RecommendedFeeds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87549D0E33742CE9556EF230 /* RecommendedFeeds.swift */; };
 		981AD7F9E4D69D9558DA4DDF /* AIServiceCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1C6C7FBDFB7673F6B17682 /* AIServiceCoordinator.swift */; };
 		9922409EA742A96B5E9902EF /* OnboardingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 388F36647B3134C62E386E28 /* OnboardingViewModel.swift */; };
@@ -125,6 +134,7 @@
 		B8BRIDGE1234567890ABCDEF /* NewsSpeechBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BRIDGE1234567890ABCDEF /* NewsSpeechBridge.swift */; };
 		B8INTENT1234567890ABCDEF /* PrismaAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8INTENT1234567890ABCDEF /* PrismaAppIntents.swift */; };
 		B8SHARE01234567890ABCDEF /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8SHARE01234567890ABCDEF /* ShareSheet.swift */; };
+		ARTICLEMENU002BUILD /* ArticleLiquidGlassActionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = ARTICLEMENU001REF /* ArticleLiquidGlassActionMenu.swift */; };
 		C136B3854AAEEB5DD5D6B0C5 /* ForYouView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63A60DC5E46682C8F1AC9371 /* ForYouView.swift */; };
 		C1AC63826B2F7CFF87282603 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A8F0EA55B35B449F259622 /* TodayView.swift */; };
 		C2ACA1CC662F9850D9C35A7E /* ArticleTopicMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546FED0244A3C918B106D587 /* ArticleTopicMatcher.swift */; };
@@ -205,11 +215,20 @@
 		12BAF0ECD2FFFCC4BA600A3A /* Author.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Author.swift; sourceTree = "<group>"; };
 		12C216445BE1943C785BAAC2 /* FeedSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedSource.swift; sourceTree = "<group>"; };
 		1319EFFBF25CEE6B113B356F /* OfflineReadingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineReadingCoordinator.swift; sourceTree = "<group>"; };
+		SHAREDRANK001REF /* SharedArticleRankingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedArticleRankingService.swift; sourceTree = "<group>"; };
 		BGTRANSREF001 /* BackgroundTranslationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundTranslationCoordinator.swift; sourceTree = "<group>"; };
+		AADREF001 /* ArticleAuthorDisplay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleAuthorDisplay.swift; sourceTree = "<group>"; };
+		LCEREF001 /* LocalCorpusEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCorpusEntry.swift; sourceTree = "<group>"; };
+		LCRREF001 /* LocalCorpusRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCorpusRepository.swift; sourceTree = "<group>"; };
+		LRCSREF001 /* LocalReadingCorpusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalReadingCorpusService.swift; sourceTree = "<group>"; };
+		RCNREF001 /* RedditContentNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedditContentNormalizer.swift; sourceTree = "<group>"; };
+		BGCONTENTREF001 /* BackgroundContentCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundContentCoordinator.swift; sourceTree = "<group>"; };
 		RECOMMREASONREF001 /* RecommendationReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationReason.swift; sourceTree = "<group>"; };
 		NETCONNREF001 /* NetworkConnectivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConnectivityMonitor.swift; sourceTree = "<group>"; };
 		OFFLINEBANNERREF001 /* OfflineBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineBanner.swift; sourceTree = "<group>"; };
 		SHEETNAVREF001 /* SheetNavigationQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheetNavigationQueue.swift; sourceTree = "<group>"; };
+		BGWGATEREF001 /* AppBackgroundWorkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppBackgroundWorkGate.swift; sourceTree = "<group>"; };
+		READERSHEETREF001 /* ArticleReaderSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleReaderSheet.swift; sourceTree = "<group>"; };
 		132CF9620993A2CE4D528752 /* ArticleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleService.swift; sourceTree = "<group>"; };
 		173CBFB742972471AB930C71 /* ForYouViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForYouViewModel.swift; sourceTree = "<group>"; };
 		19898873B14DDBAFEAD0CBAA /* SocialFeedURLResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialFeedURLResolver.swift; sourceTree = "<group>"; };
@@ -258,6 +277,7 @@
 		A8BRIDGE1234567890ABCDEF /* NewsSpeechBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewsSpeechBridge.swift; sourceTree = "<group>"; };
 		A8INTENT1234567890ABCDEF /* PrismaAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrismaAppIntents.swift; sourceTree = "<group>"; };
 		A8SHARE01234567890ABCDEF /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		ARTICLEMENU001REF /* ArticleLiquidGlassActionMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArticleLiquidGlassActionMenu.swift; sourceTree = "<group>"; };
 		63A60DC5E46682C8F1AC9371 /* ForYouView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForYouView.swift; sourceTree = "<group>"; };
 		63B8C2CEC67D996EE5DC9AAE /* RecommendationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationEngine.swift; sourceTree = "<group>"; };
 		64C7086E1DE846E4674BA81A /* RemoteAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteAIService.swift; sourceTree = "<group>"; };
@@ -390,6 +410,7 @@
 				B604B26B876727828F7CEC67 /* FeedRefreshNotification.swift */,
 				EC68E9A52D668F63F10644E3 /* MainTabView.swift */,
 				SHEETNAVREF001 /* SheetNavigationQueue.swift */,
+				BGWGATEREF001 /* AppBackgroundWorkGate.swift */,
 				0E5934482E54044A6241CAE3 /* PrismaApp.swift */,
 				C519ABFECEB9563D65FB3816 /* RootView.swift */,
 			);
@@ -445,6 +466,7 @@
 				FE0866FC757879D4B9FF35C9 /* ParsedFeed.swift */,
 				3AE3E1C87A2B78A34C286547 /* LiveTimelineEntry.swift */,
 				77FEACF3F8CB249CFA5C84F9 /* RSSAtomParser.swift */,
+				RCNREF001 /* RedditContentNormalizer.swift */,
 			);
 			path = Parsing;
 			sourceTree = "<group>";
@@ -534,6 +556,7 @@
 				46D418B21AD0D154D3DAFDAF /* AIArticleSummary.swift */,
 				1B2172CB7B7F1F75966FB6CE /* Article.swift */,
 				4BCB3FB567C6FBF6B6371407 /* Article+DisplaySummary.swift */,
+				AADREF001 /* ArticleAuthorDisplay.swift */,
 				577CF8AD78586B50A1F1E340 /* ArticleTranslation.swift */,
 				12BAF0ECD2FFFCC4BA600A3A /* Author.swift */,
 				27327471CFAB5C901452F4F5 /* AuthorProfile.swift */,
@@ -542,6 +565,7 @@
 				12C216445BE1943C785BAAC2 /* FeedSource.swift */,
 				D0B477363EDF2938A59D1BAD /* NewsCluster.swift */,
 				D66736C6E1D0CDE3820C188B /* ReadingHistory.swift */,
+				LCEREF001 /* LocalCorpusEntry.swift */,
 				90E1254BA22104C1CD9A3A42 /* RedditComment.swift */,
 				05182D884396E08CB737EAD9 /* RedditCommentsTranslation.swift */,
 				FF410D24E9A8D802BAC93230 /* SavedArticle.swift */,
@@ -567,7 +591,10 @@
 				EC6A0BB5E772912799665F26 /* FaviconURLBuilder.swift */,
 				9F6375536EE22441158AF073 /* FeedService.swift */,
 				1319EFFBF25CEE6B113B356F /* OfflineReadingCoordinator.swift */,
+				SHAREDRANK001REF /* SharedArticleRankingService.swift */,
 				BGTRANSREF001 /* BackgroundTranslationCoordinator.swift */,
+				LRCSREF001 /* LocalReadingCorpusService.swift */,
+				BGCONTENTREF001 /* BackgroundContentCoordinator.swift */,
 				RECOMMREASONREF001 /* RecommendationReason.swift */,
 				AF8BD9A822F0E31C2FD8B0E6 /* ReadingInterestProfile.swift */,
 				BEA509584BB75C93A6D9D169 /* ReadingLanguage.swift */,
@@ -599,6 +626,7 @@
 				62EA709ACB98E38D560980FD /* AIArticleInsightRepository.swift */,
 				0D82C7839582B01065E0001C /* AIArticleSummaryRepository.swift */,
 				3457D5238AB6632A5CE3159D /* ArticleRepository.swift */,
+				LCRREF001 /* LocalCorpusRepository.swift */,
 				935A02F767C802C1C1DEFAF0 /* ArticleTranslationRepository.swift */,
 				2DF14A07747DD62D8AC9256E /* CollectionRepository.swift */,
 				BEC5B9FB38BEE41D81E428C7 /* FeedSourceRepository.swift */,
@@ -712,6 +740,7 @@
 			isa = PBXGroup;
 			children = (
 				0F96A1A873923880AA371D59 /* ArticleReaderView.swift */,
+				READERSHEETREF001 /* ArticleReaderSheet.swift */,
 				036953CDE1679366159999BF /* ArticleReaderViewModel.swift */,
 				B4C18D4E0D7803E708CFB0EC /* LiveTimelineView.swift */,
 				3F18970CB99398FD68E1B0E8 /* RedditCommentsSection.swift */,
@@ -760,8 +789,9 @@
 				98D0C0D45D1E66FFD68F1CBD /* PrismaDismissButton.swift */,
 				723396E3BB432714D1D6B74B /* PrismaScreen.swift */,
 				9E1A6CB2469164510034D833 /* ReaderTypographyMenu.swift */,
-				A8SHARE01234567890ABCDEF /* ShareSheet.swift */,
-				9E7E63532E438E5D011392FB /* SourceIconView.swift */,
+		A8SHARE01234567890ABCDEF /* ShareSheet.swift */,
+		ARTICLEMENU001REF /* ArticleLiquidGlassActionMenu.swift */,
+		9E7E63532E438E5D011392FB /* SourceIconView.swift */,
 				2770AA4F1E1016B4D48B907E /* StyleFilterBar.swift */,
 				TABRETAPREF001 /* TabBarReTapDetector.swift */,
 				SAVEDLIBFILTER002REF /* SavedLibraryFilterBar.swift */,
@@ -915,6 +945,7 @@
 				DD85521F9BF9DE577BB3711E /* AppleIntelligenceAvailability.swift in Sources */,
 				B630BC92E80CF9061CF82F72 /* AppleIntelligenceSettingsSection.swift in Sources */,
 				031937A8A0DCC4DE9BFDE371 /* Article+DisplaySummary.swift in Sources */,
+				AADBUILD001 /* ArticleAuthorDisplay.swift in Sources */,
 				3B5E88330DFB56C8FC62984F /* Article.swift in Sources */,
 				D9C7330347DCCC7248591977 /* ArticleCard.swift in Sources */,
 				265809623E94C19CEED6C9D5 /* ArticleHTMLView.swift in Sources */,
@@ -929,6 +960,7 @@
 				3134A4A3010C62EA79C4EAF2 /* ArticleReaderViewModel.swift in Sources */,
 				3CAD77549B5DEB366EC1CD10 /* ArticleRemoteImage.swift in Sources */,
 				DAAEE9A9A3F323CD4DAF1C7C /* ArticleRepository.swift in Sources */,
+				LCRBUILD001 /* LocalCorpusRepository.swift in Sources */,
 				B7C4D48533FA56B72B71572E /* ArticleService.swift in Sources */,
 				030F216D2D24E32EA9EEF3D2 /* ArticleSummaryService.swift in Sources */,
 				C2ACA1CC662F9850D9C35A7E /* ArticleTopicMatcher.swift in Sources */,
@@ -981,11 +1013,16 @@
 				0ED5ADEA70FD5DC561C80176 /* OPMLExporter.swift in Sources */,
 				4DFCA58C22C609FE2970A7D2 /* OPMLImporter.swift in Sources */,
 				9698FEE3CAB250C486EA126D /* OfflineReadingCoordinator.swift in Sources */,
+				SHAREDRANK001BUILD /* SharedArticleRankingService.swift in Sources */,
 				BGTRANSBUILD001 /* BackgroundTranslationCoordinator.swift in Sources */,
+				LRCSBUILD001 /* LocalReadingCorpusService.swift in Sources */,
+				BGCONTENTBUILD001 /* BackgroundContentCoordinator.swift in Sources */,
 				RECOMMREASONBUILD001 /* RecommendationReason.swift in Sources */,
 				NETCONNBUILD001 /* NetworkConnectivityMonitor.swift in Sources */,
 				OFFLINEBANNERBUILD001 /* OfflineBanner.swift in Sources */,
 				SHEETNAVBUILD001 /* SheetNavigationQueue.swift in Sources */,
+				BGWGATEBUILD001 /* AppBackgroundWorkGate.swift in Sources */,
+				READERSHEETBUILD001 /* ArticleReaderSheet.swift in Sources */,
 				B4A096C3EAA5A425F728E8F8 /* OnboardingView.swift in Sources */,
 				9922409EA742A96B5E9902EF /* OnboardingViewModel.swift in Sources */,
 				89AE96F6025CF814410C411B /* ParsedFeed.swift in Sources */,
@@ -995,6 +1032,7 @@
 				B8BRIDGE1234567890ABCDEF /* NewsSpeechBridge.swift in Sources */,
 				B8INTENT1234567890ABCDEF /* PrismaAppIntents.swift in Sources */,
 				B8SHARE01234567890ABCDEF /* ShareSheet.swift in Sources */,
+				ARTICLEMENU002BUILD /* ArticleLiquidGlassActionMenu.swift in Sources */,
 				F9F6812025F304BAEE64A09E /* PrismaApp.swift in Sources */,
 				D5F8A8A8DBB9628196ACA11E /* PrismaBadge.swift in Sources */,
 				FBE0210EEC2EA5762F6CB5A1 /* PrismaButton.swift in Sources */,
@@ -1009,11 +1047,13 @@
 				FAFBA43B0A9B3EDF08DF7AB4 /* PrismaTypography.swift in Sources */,
 				C9614394541090E173AF9405 /* PrivacyView.swift in Sources */,
 				C39CF4004D01D4A4535031D3 /* RSSAtomParser.swift in Sources */,
+				RCNBUILD001 /* RedditContentNormalizer.swift in Sources */,
 				053FCF49ABBAFB9527299AE0 /* LiveTimelineEntry.swift in Sources */,
 				C50581A8F6AB0B7CF4E8B4C6 /* LiveTimelineView.swift in Sources */,
 				9AD98ADFC3C7C651AADD3EBB /* ReaderFontFamily.swift in Sources */,
 				A094B4E218638007A3E16178 /* ReaderTypographyMenu.swift in Sources */,
 				B16A918678627AE5F07EDE65 /* ReadingHistory.swift in Sources */,
+				LCEBUILD001 /* LocalCorpusEntry.swift in Sources */,
 				1C4CA706FBD6C9288BF14843 /* ReadingInterestProfile.swift in Sources */,
 				3CF551FA877427CCDAE7E9DC /* ReadingLanguage.swift in Sources */,
 				3F2D7C30B9B3E94CA718CD67 /* ReadingTimeEstimator.swift in Sources */,

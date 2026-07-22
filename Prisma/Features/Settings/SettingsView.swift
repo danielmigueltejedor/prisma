@@ -32,15 +32,6 @@ struct SettingsView: View {
           }
 
           Section(String(localized: "settings.experiments")) {
-            Toggle(isOn: cascadeViewBinding) {
-              VStack(alignment: .leading, spacing: 2) {
-                Text(String(localized: "settings.cascadeView"))
-                Text(String(localized: "settings.cascadeView.hint"))
-                  .font(PrismaTypography.caption())
-                  .foregroundStyle(PrismaColors.textSecondary)
-              }
-            }
-
             VStack(alignment: .leading, spacing: PrismaSpacing.xxs) {
               Label(String(localized: "settings.siriReading"), systemImage: "speaker.wave.2.fill")
                 .font(PrismaTypography.body())
@@ -81,6 +72,23 @@ struct SettingsView: View {
             }
           }
 
+          Section(String(localized: "settings.localCorpus")) {
+            Picker(selection: localCorpusLimitBinding) {
+              Text(String(localized: "settings.localCorpus.off")).tag(0)
+              Text(String(localized: "settings.localCorpus.128mb")).tag(128)
+              Text(String(localized: "settings.localCorpus.256mb")).tag(256)
+              Text(String(localized: "settings.localCorpus.512mb")).tag(512)
+              Text(String(localized: "settings.localCorpus.1024mb")).tag(1024)
+            } label: {
+              VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "settings.localCorpus.title"))
+                Text(String(localized: "settings.localCorpus.hint"))
+                  .font(PrismaTypography.caption())
+                  .foregroundStyle(PrismaColors.textSecondary)
+              }
+            }
+          }
+
           Section(String(localized: "settings.data")) {
             Button(String(localized: "settings.clearData"), role: .destructive) {
               viewModel.clearAllData()
@@ -100,10 +108,10 @@ struct SettingsView: View {
     }
   }
 
-  private var cascadeViewBinding: Binding<Bool> {
+  private var localCorpusLimitBinding: Binding<Int> {
     Binding(
-      get: { viewModel.preferences?.cascadeViewEnabled ?? false },
-      set: { viewModel.setCascadeViewEnabled($0) }
+      get: { viewModel.preferences?.localCorpusLimitMB ?? UserPreference.defaultLocalCorpusLimitMB },
+      set: { viewModel.setLocalCorpusLimitMB($0) }
     )
   }
 

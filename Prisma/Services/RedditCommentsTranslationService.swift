@@ -57,10 +57,21 @@ final class RedditCommentsTranslationService {
     article: Article,
     comments: [RedditComment]
   ) async -> [RedditComment] {
-    let flattened = flatten(comments).prefix(Self.maxCommentsPerBatch)
-    let bodies = flattened.map(\.comment.body)
-    guard !bodies.isEmpty else { return comments }
+    var existingMap: [String: String] = [:]
+    if let cached = try? repository.find(
+      articleId: article.id,
+      targetLanguageCode: translationService.targetLanguageCode
+    ),
+      let payload = repository.payload(for: cached) {
+      existingMap = payload.bodiesByCommentId
+    }
 
+    let flattened = flatten(comments)
+    let pending = flattened.filter { existingMap[$0.comment.id] == nil }
+    let batch = Array(pending.prefix(Self.maxCommentsPerBatch))
+    guard !batch.isEmpty else { return apply(existingMap, to: comments) }
+
+    let bodies = batch.map(\.comment.body)
     do {
       let sourceLanguage = ArticleLanguageDetector.detectLanguageCode(for: article)
       let translated = try await aiService.translatePlainTexts(
@@ -68,10 +79,10 @@ final class RedditCommentsTranslationService {
         to: translationService.targetLanguageCode,
         sourceLanguage: sourceLanguage
       )
-      guard translated.count == bodies.count else { return comments }
+      guard translated.count == bodies.count else { return apply(existingMap, to: comments) }
 
-      var map: [String: String] = [:]
-      for (index, item) in flattened.enumerated() {
+      var map = existingMap
+      for (index, item) in batch.enumerated() {
         map[item.comment.id] = translated[index]
       }
 
@@ -81,9 +92,10 @@ final class RedditCommentsTranslationService {
         targetLanguageCode: translationService.targetLanguageCode,
         payload: payload
       )
+      TranslationRefreshNotifier.publish()
       return apply(map, to: comments)
     } catch {
-      return comments
+      return apply(existingMap, to: comments)
     }
   }
 

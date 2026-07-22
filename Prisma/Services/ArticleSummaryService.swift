@@ -4,7 +4,8 @@ import Foundation
 final class ArticleSummaryService {
   private let summaryRepository: AIArticleSummaryRepository
   private let aiService: AIService
-  private var inFlightTasks: [String: Task<String?, Never>] = [:]
+  private var inFlightTasks: [String: Task<Void, Never>] = [:]
+  private var inFlightErrors: [String: Error] = [:]
 
   init(summaryRepository: AIArticleSummaryRepository, aiService: AIService) {
     self.summaryRepository = summaryRepository
@@ -16,37 +17,38 @@ final class ArticleSummaryService {
   }
 
   @discardableResult
-  func ensureSummary(for article: Article) async -> AIArticleSummary? {
-    guard canSummarize else { return nil }
-    if let cached = cachedSummary(for: article) { return cached }
+  func ensureSummary(for article: Article) async -> Result<AIArticleSummary, Error> {
+    guard canSummarize else {
+      return .failure(AIServiceError.notAvailable)
+    }
+    if let cached = cachedSummary(for: article) { return .success(cached) }
 
     let articleId = article.id
     if let existing = inFlightTasks[articleId] {
-      _ = await existing.value
-      return cachedSummary(for: article)
+      await existing.value
+      if let cached = cachedSummary(for: article) { return .success(cached) }
+      return .failure(inFlightErrors[articleId] ?? AIServiceError.notAvailable)
     }
 
-    let task = Task { @MainActor () -> String? in
+    let task = Task { @MainActor in
       do {
         let dto = try await aiService.summarizeArticle(article)
         _ = try summaryRepository.save(dto)
-        return articleId
+        inFlightErrors[articleId] = nil
       } catch {
-        return nil
+        inFlightErrors[articleId] = error
       }
     }
 
     inFlightTasks[articleId] = task
     defer { inFlightTasks[articleId] = nil }
-    guard await task.value != nil else { return nil }
-    return cachedSummary(for: article)
+    await task.value
+
+    if let cached = cachedSummary(for: article) { return .success(cached) }
+    return .failure(inFlightErrors[articleId] ?? AIServiceError.notAvailable)
   }
 
   private var canSummarize: Bool {
-    #if DEBUG
-    return true
-    #else
-    return AIServiceFactory.hasFreeOnDeviceAI
-    #endif
+    AIServiceFactory.hasFreeOnDeviceAI
   }
 }

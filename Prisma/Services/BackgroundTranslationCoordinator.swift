@@ -1,19 +1,21 @@
 import Foundation
 
-/// Traduce en segundo plano todos los artículos en idioma distinto al configurado,
-/// priorizando inglés y el ranking de interés.
 @MainActor
 final class BackgroundTranslationCoordinator {
-  private static let articleFetchLimit = 500
-  private static let maxTranslationsPerSweep = 250
-  private static let sweepCooldown: TimeInterval = 15
+  private static let articleFetchLimit = 300
+  private static let maxTranslationsPerSweep = 8
+  private static let maxRedditCommentPrefetchesPerSweep = 2
+  private static let sweepCooldown: TimeInterval = 90
 
   private let articleRepository: ArticleRepository
   private let feedSourceRepository: FeedSourceRepository
   private let preferenceRepository: PreferenceRepository
   private let translationService: ArticleTranslationService
-  private let recommendationEngine: RecommendationEngine
+  private let sharedRankingService: SharedArticleRankingService
   private let previewStore: ArticlePreviewTranslationStore
+  private let redditCommentsService: RedditCommentsService
+  private let redditCommentsTranslationService: RedditCommentsTranslationService
+  private weak var backgroundWorkGate: AppBackgroundWorkGate?
 
   private var sweepTask: Task<Void, Never>?
   private var lastSweepStartedAt: Date?
@@ -23,18 +25,25 @@ final class BackgroundTranslationCoordinator {
     feedSourceRepository: FeedSourceRepository,
     preferenceRepository: PreferenceRepository,
     translationService: ArticleTranslationService,
-    recommendationEngine: RecommendationEngine,
-    previewStore: ArticlePreviewTranslationStore
+    sharedRankingService: SharedArticleRankingService,
+    previewStore: ArticlePreviewTranslationStore,
+    redditCommentsService: RedditCommentsService,
+    redditCommentsTranslationService: RedditCommentsTranslationService,
+    backgroundWorkGate: AppBackgroundWorkGate? = nil
   ) {
     self.articleRepository = articleRepository
     self.feedSourceRepository = feedSourceRepository
     self.preferenceRepository = preferenceRepository
     self.translationService = translationService
-    self.recommendationEngine = recommendationEngine
+    self.sharedRankingService = sharedRankingService
     self.previewStore = previewStore
+    self.redditCommentsService = redditCommentsService
+    self.redditCommentsTranslationService = redditCommentsTranslationService
+    self.backgroundWorkGate = backgroundWorkGate
   }
 
   func scheduleSweep(priority: TaskPriority = .utility) {
+    guard backgroundWorkGate?.shouldDeferHeavyWork != true else { return }
     guard AIServiceFactory.hasFreeOnDeviceAI else { return }
     guard !ProcessInfo.processInfo.isLowPowerModeEnabled else { return }
     if let lastSweepStartedAt,
@@ -49,13 +58,18 @@ final class BackgroundTranslationCoordinator {
     }
   }
 
+  func cancelSweep() {
+    sweepTask?.cancel()
+    sweepTask = nil
+  }
+
   private func performSweep() async {
     guard !Task.isCancelled else { return }
     lastSweepStartedAt = .now
 
-    guard let candidates = try? prioritizedUntranslatedArticles() else { return }
-    guard !candidates.isEmpty else { return }
+    guard let candidates = try? await prioritizedUntranslatedArticles() else { return }
 
+    var translatedArticles: [Article] = []
     var translatedCount = 0
     for article in candidates {
       guard !Task.isCancelled else { return }
@@ -63,61 +77,66 @@ final class BackgroundTranslationCoordinator {
       guard translationService.cachedTranslation(for: article) == nil else { continue }
 
       if await translationService.ensureTranslation(for: article) != nil {
+        translatedArticles.append(article)
         translatedCount += 1
         if translatedCount.isMultiple(of: 3) {
+          previewStore.mergeTranslations(for: translatedArticles)
           TranslationRefreshNotifier.publish()
         }
       }
+      try? await Task.sleep(nanoseconds: 250_000_000)
       await Task.yield()
     }
 
     if translatedCount > 0 {
+      previewStore.mergeTranslations(for: translatedArticles)
       TranslationRefreshNotifier.publish()
-      if let all = try? articleRepository.fetchAll(limit: Self.articleFetchLimit) {
-        previewStore.forceRefresh(for: all)
-      }
     }
 
-    if translatedCount >= Self.maxTranslationsPerSweep,
-       candidates.count > translatedCount {
+    await prefetchRedditCommentsIfNeeded(limit: Self.maxRedditCommentPrefetchesPerSweep)
+
+    let hasArticleBacklog = candidates.count > translatedCount
+    if translatedCount >= Self.maxTranslationsPerSweep, hasArticleBacklog {
       scheduleSweep(priority: .background)
     }
   }
 
-  private func prioritizedUntranslatedArticles() throws -> [Article] {
-    let prefs = try preferenceRepository.getOrCreate()
-    let enabledSourceIds = Set(try feedSourceRepository.fetchEnabled().map(\.id))
-    let all = try articleRepository.fetchAll(limit: Self.articleFetchLimit)
-      .filter { enabledSourceIds.contains($0.sourceId) }
+  private func prefetchRedditCommentsIfNeeded(limit: Int) async {
+    guard limit > 0 else { return }
+    guard let articles = try? articleRepository.fetchAll(limit: 120) else { return }
 
-    let needing = all.filter { article in
+    var count = 0
+    for article in articles {
+      guard !Task.isCancelled else { return }
+      guard count < limit else { break }
+      guard isReddit(article) else { continue }
+      guard translationService.needsTranslation(for: article) else { continue }
+      guard let comments = try? await redditCommentsService.fetchComments(for: article) else { continue }
+      _ = await redditCommentsTranslationService.translatedComments(for: article, comments: comments)
+      count += 1
+      try? await Task.sleep(nanoseconds: 350_000_000)
+      await Task.yield()
+    }
+  }
+
+  private func isReddit(_ article: Article) -> Bool {
+    if article.feedSource?.effectivePlatform == .reddit { return true }
+    return FeedPlatform.detect(feedURL: article.originalFeedUrl) == .reddit
+  }
+
+  private func prioritizedUntranslatedArticles() async throws -> [Article] {
+    let enabledSourceIds = Set(try feedSourceRepository.fetchEnabled().map(\.id))
+    let snapshot = try await sharedRankingService.ranking(limit: Self.articleFetchLimit)
+    let ranked = snapshot.ranked.filter { enabledSourceIds.contains($0.sourceId) }
+
+    let needing = ranked.filter { article in
       translationService.needsTranslation(for: article)
         && translationService.cachedTranslation(for: article) == nil
     }
     guard !needing.isEmpty else { return [] }
 
-    let sources = try feedSourceRepository.fetchAll()
-    let sourcesById = Dictionary(uniqueKeysWithValues: sources.map { ($0.id, $0) })
-    let favorites = Set(try feedSourceRepository.fetchFavorites().map(\.id))
-    let blockedSources = try feedSourceRepository.fetchBlockedSourceIds()
-    let savedCategories = Set(all.filter(\.isSaved).flatMap(\.categoryNames))
-    let readCounts = Dictionary(grouping: all.filter(\.isRead), by: \.sourceId).mapValues(\.count)
-    let interest = ReadingInterestProfiler.build(
-      from: all,
-      favoriteSourceIds: favorites,
-      sourcesById: sourcesById
-    )
-
-    let ranked = recommendationEngine.rank(
-      articles: all,
-      favoriteSourceIds: favorites,
-      savedCategoryNames: savedCategories,
-      readSourceCounts: readCounts,
-      blockedKeywords: prefs.blockedKeywords,
-      blockedSourceIds: blockedSources,
-      interest: interest
-    )
     let rankByID = Dictionary(uniqueKeysWithValues: ranked.enumerated().map { ($1.id, $0) })
+    let favorites = snapshot.favoriteSourceIds
 
     return needing.sorted { lhs, rhs in
       translationPriority(lhs, rankIndex: rankByID[lhs.id], favorites: favorites)
@@ -137,6 +156,9 @@ final class BackgroundTranslationCoordinator {
     if isEnglish(article) {
       score += 8_000
     }
+    if isReddit(article) {
+      score += 4_000
+    }
     if favorites.contains(article.sourceId) {
       score += 2_000
     }
@@ -154,8 +176,14 @@ final class BackgroundTranslationCoordinator {
   }
 
   private func isEnglish(_ article: Article) -> Bool {
-    guard let code = ArticleLanguageDetector.detectLanguageCode(for: article) else { return false }
-    return code.hasPrefix("en")
+    if let code = ArticleLanguageDetector.detectLanguageCode(for: article) {
+      return code.hasPrefix("en")
+    }
+    let text = ArticleLanguageDetector.sampleText(from: article)
+    let letters = text.unicodeScalars.filter { CharacterSet.letters.contains($0) }
+    guard !letters.isEmpty else { return false }
+    let asciiCount = letters.filter { $0.value < 128 }.count
+    return Double(asciiCount) / Double(letters.count) > 0.9
   }
 }
 

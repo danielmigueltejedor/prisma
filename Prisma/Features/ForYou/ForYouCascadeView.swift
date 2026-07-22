@@ -1,15 +1,22 @@
 import SwiftUI
 
+private enum CascadeLayout {
+  static let railWidth: CGFloat = 58
+  static let tabBarClearance: CGFloat = 8
+  static let contentRailSpacing: CGFloat = 10
+}
+
 struct ForYouCascadeView: View {
-  @Bindable var viewModel: ForYouViewModel
+  let viewModel: ForYouViewModel
   let makeReaderViewModel: (Article) -> ArticleReaderViewModel
+  let onOpenArticle: (Article) -> Void
 
   @State private var scrollPosition: String?
-  @State private var visibleArticleID: String?
-  @ObservedObject private var speechReader = ArticleSpeechReader.shared
+  @State private var activeReader: ArticleReaderViewModel?
+  @State private var committedArticleID: String?
 
   private var articles: [Article] {
-    Array(viewModel.cascadeArticles.prefix(40))
+    viewModel.cascadePages
   }
 
   var body: some View {
@@ -21,189 +28,200 @@ struct ForYouCascadeView: View {
           message: String(localized: "foryou.empty.message")
         )
       } else {
-        ScrollView(.vertical) {
-          LazyVStack(spacing: 0) {
-            ForEach(Array(articles.enumerated()), id: \.element.id) { index, article in
-              CascadeArticlePageView(
-                article: article,
-                forYouViewModel: viewModel,
-                makeReaderViewModel: makeReaderViewModel,
-                recommendationReason: viewModel.recommendationReason(for: article),
-                isSpeakingThisArticle: isSpeaking(article),
-                onLike: { viewModel.handleCascadeLike(articleID: article.id) },
-                onSave: { viewModel.handleCascadeSave(articleID: article.id) },
-                isLast: index == articles.count - 1
-              )
-              .containerRelativeFrame(.vertical, count: 1, spacing: 0)
-              .clipped()
-              .id(article.id)
-            }
-          }
-          .scrollTargetLayout()
-        }
-        .scrollTargetBehavior(.paging)
-        .scrollPosition(id: $scrollPosition)
-        .scrollIndicators(.hidden)
-        .scrollClipDisabled(false)
-        .animation(.none, value: articles.map(\.id))
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipped()
-        .onChange(of: scrollPosition) { oldValue, newValue in
-          if let oldValue, oldValue != newValue {
-            viewModel.completeCascadePage(articleID: oldValue)
-          }
-          if let newValue {
-            viewModel.beginCascadePage(articleID: newValue)
-            viewModel.preloadCascadeReaders(around: newValue, factory: makeReaderViewModel)
-          }
-          visibleArticleID = newValue
-        }
-        .onAppear {
-          if scrollPosition == nil, let first = articles.first?.id {
-            scrollPosition = first
-            visibleArticleID = first
-            viewModel.beginCascadePage(articleID: first)
-            viewModel.preloadCascadeReaders(around: first, factory: makeReaderViewModel)
-          }
-        }
-        .onChange(of: viewModel.cascadeFeedRefreshToken) { _, _ in
-          jumpToFreshCascadeHead()
-        }
+        cascadePager
       }
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .safeAreaInset(edge: .top, spacing: 0) {
-      if !articles.isEmpty {
-        PrismaNavigationHeaderChrome {
-          cascadeHeaderBar
+    .background {
+      PrismaColors.background
+        .ignoresSafeArea()
+    }
+    .clipped()
+  }
+
+  private var cascadePager: some View {
+    ScrollView(.vertical) {
+      LazyVStack(spacing: 0) {
+        ForEach(articles) { article in
+          cascadePage(for: article)
+            .containerRelativeFrame(.vertical, count: 1, spacing: 0)
+            .frame(maxWidth: .infinity)
+            .id(article.id)
         }
+      }
+      .scrollTargetLayout()
+    }
+    .scrollTargetBehavior(.paging)
+    .scrollPosition(id: $scrollPosition)
+    .scrollIndicators(.hidden)
+    .scrollBounceBehavior(.basedOnSize, axes: .vertical)
+    .scrollClipDisabled(false)
+    .onScrollPhaseChange { _, newPhase in
+      let isScrolling = newPhase != .idle
+      viewModel.setCascadeOuterScrollActive(isScrolling)
+      if isScrolling {
+        activeReader?.cancelBackgroundWork()
+      }
+      guard newPhase == .idle, let scrollPosition else { return }
+      settlePage(articleID: scrollPosition)
+    }
+    .onAppear {
+      guard activeReader == nil, let first = articles.first else { return }
+      scrollPosition = first.id
+      Task { @MainActor in
+        await Task.yield()
+        settlePage(articleID: first.id)
+      }
+    }
+    .onChange(of: viewModel.cascadeFeedRefreshToken) { _, _ in
+      guard let first = articles.first else {
+        scrollPosition = nil
+        activeReader = nil
+        committedArticleID = nil
+        return
+      }
+      scrollPosition = first.id
+      committedArticleID = nil
+      Task { @MainActor in
+        await Task.yield()
+        settlePage(articleID: first.id)
       }
     }
   }
 
-  private func jumpToFreshCascadeHead() {
-    guard let first = articles.first?.id else {
-      scrollPosition = nil
-      visibleArticleID = nil
-      return
+  @ViewBuilder
+  private func cascadePage(for article: Article) -> some View {
+    let isActive = committedArticleID == article.id
+    let showsActiveContent = isActive
+      && activeReader != nil
+      && activeReader?.isCascadePresentationReady == true
+
+    ZStack {
+      CascadeArticlePlaceholder(article: article)
+        .opacity(showsActiveContent ? 0 : 1)
+        .allowsHitTesting(!showsActiveContent)
+
+      if showsActiveContent, let activeReader {
+        CascadeArticleActivePage(
+          article: article,
+          readerViewModel: activeReader,
+          recommendationReason: viewModel.recommendationReason(for: article),
+          onLike: { viewModel.handleCascadeLike(articleID: article.id) },
+          onSave: { viewModel.handleCascadeSave(articleID: article.id) },
+          onOpenArticle: { onOpenArticle(article) },
+          isLast: article.id == articles.last?.id
+        )
+      }
     }
-    scrollPosition = first
-    visibleArticleID = first
-    viewModel.beginCascadePage(articleID: first)
-    viewModel.preloadCascadeReaders(around: first, factory: makeReaderViewModel)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .clipped()
   }
 
-  private var cascadeHeaderBar: some View {
-    HStack(spacing: PrismaSpacing.sm) {
-      Text(String(localized: "tab.foryou"))
-        .font(PrismaTypography.headline())
+  private func settlePage(articleID: String) {
+    guard articles.contains(where: { $0.id == articleID }) else { return }
+    let previousID = committedArticleID
+    guard previousID != articleID else { return }
+
+    if let previousID, previousID != articleID {
+      viewModel.handleCascadeScrollChange(from: previousID, to: articleID)
+    }
+
+    activeReader?.onDisappear()
+    guard let article = articles.first(where: { $0.id == articleID }) else { return }
+    activeReader = viewModel.activateCascadeReader(
+      for: article,
+      factory: makeReaderViewModel
+    )
+    activeReader?.syncLibraryState()
+    activeReader?.onAppear()
+
+    committedArticleID = articleID
+    viewModel.beginCascadePage(articleID: articleID)
+    if previousID == nil {
+      viewModel.handleCascadeScrollChange(from: nil, to: articleID)
+    }
+  }
+
+}
+
+private struct CascadeArticlePlaceholder: View {
+  let article: Article
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: PrismaSpacing.md) {
+      Text(article.title)
+        .font(PrismaTypography.readerTitle())
         .foregroundStyle(PrismaColors.textPrimary)
-        .lineLimit(1)
-        .frame(maxWidth: .infinity)
-
-      Text(String(localized: "settings.cascadeView.beta"))
-        .font(PrismaTypography.caption2(.semibold))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(PrismaColors.accentFallback.opacity(0.15))
-        .clipShape(Capsule())
-        .foregroundStyle(PrismaColors.accentFallback)
+        .lineLimit(4)
+      Spacer(minLength: 0)
     }
-    .padding(.horizontal, PrismaSpacing.md)
-    .frame(minHeight: 48)
-    .padding(.top, PrismaSpacing.xxs)
-    .padding(.bottom, PrismaSpacing.sm)
-  }
-
-  private func isSpeaking(_ article: Article) -> Bool {
-    speechReader.isSpeaking
-      && speechReader.currentArticleID == article.id
-      && visibleArticleID == article.id
+    .padding(PrismaSpacing.lg)
+    .padding(.bottom, CascadeLayout.tabBarClearance)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .background(PrismaColors.background)
+    .clipped()
   }
 }
 
-private struct CascadeArticlePageView: View {
-  @Environment(\.openURL) private var openURL
-
+private struct CascadeArticleActivePage: View {
   let article: Article
-  let forYouViewModel: ForYouViewModel
-  let makeReaderViewModel: (Article) -> ArticleReaderViewModel
+  @Bindable var readerViewModel: ArticleReaderViewModel
   var recommendationReason: String?
-  let isSpeakingThisArticle: Bool
   let onLike: () -> Void
   let onSave: () -> Void
+  let onOpenArticle: () -> Void
   let isLast: Bool
 
-  @State private var readerViewModel: ArticleReaderViewModel?
   @State private var showShare = false
   @State private var showMediaGallery = false
   @State private var galleryIndex = 0
   @State private var activeLikeBurst: (id: UUID, location: CGPoint)?
   @State private var aiSheet: CascadeAISheet?
+  @ObservedObject private var speechReader = ArticleSpeechReader.shared
 
-  var body: some View {
-    Group {
-      if let readerViewModel {
-        cascadePageContent(readerViewModel)
-      } else {
-        ProgressView()
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-      }
-    }
-    .task(id: article.id) {
-      await Task.yield()
-      guard !Task.isCancelled else { return }
-      readerViewModel = forYouViewModel.cascadeReader(for: article, factory: makeReaderViewModel)
-    }
+  private var isSpeakingThisArticle: Bool {
+    speechReader.isSpeaking && speechReader.currentArticleID == article.id
   }
 
-  @ViewBuilder
-  private func cascadePageContent(_ readerViewModel: ArticleReaderViewModel) -> some View {
-    ZStack(alignment: .trailing) {
-      ScrollView {
-        VStack(alignment: .leading, spacing: PrismaSpacing.md) {
-          cascadeHeader(readerViewModel)
-          cascadeBody(readerViewModel)
-          cascadeFooter(readerViewModel)
-        }
-        .padding(.horizontal, PrismaSpacing.lg)
-        .padding(.top, PrismaSpacing.md)
-        .padding(.bottom, PrismaSpacing.xl)
-        .padding(.trailing, 56)
-      }
-      .coordinateSpace(name: "cascadeArticleScroll")
-      .overlay {
-        if let burst = activeLikeBurst {
-          CascadeLikeBurst(location: burst.location)
-            .id(burst.id)
-        }
-      }
-      .simultaneousGesture(
-        SpatialTapGesture(count: 2, coordinateSpace: .local)
-          .onEnded { value in
-            triggerDoubleTapLike(at: value.location, readerViewModel: readerViewModel)
-          }
-      )
+  private var showsReadFullAction: Bool {
+    guard let plain = readerViewModel.plainBodyText else { return false }
+    return plain.count > 400
+  }
+
+  var body: some View {
+    ZStack(alignment: .topLeading) {
+      pageContent
+        .padding(.trailing, CascadeLayout.railWidth + CascadeLayout.contentRailSpacing)
 
       CascadeActionRail(
         isSaved: readerViewModel.isSaved,
         isFavorite: readerViewModel.isFavorite,
         isSpeaking: isSpeakingThisArticle,
-        canUseAI: readerViewModel.canUseAI,
-        onLike: { performLikeToggle(readerViewModel) },
+        onLike: performLikeToggle,
         onSave: {
           readerViewModel.toggleSaved()
           onSave()
         },
         onShare: { showShare = true },
         onSpeak: { toggleSpeech() },
-        onSummary: { openAISheet(.summary, readerViewModel: readerViewModel) },
-        onContext: { openAISheet(.context, readerViewModel: readerViewModel) }
+        onSummary: readerViewModel.hasSummaryAvailable
+          ? { openAISheet(.summary) }
+          : nil,
+        onComparison: readerViewModel.hasComparisonAvailable
+          ? { openAISheet(.comparison) }
+          : nil,
+        onContext: readerViewModel.hasContextAvailable
+          ? { openAISheet(.context) }
+          : nil
       )
-      .padding(.trailing, PrismaSpacing.sm)
-      .padding(.bottom, 96)
+      .frame(width: CascadeLayout.railWidth, alignment: .top)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
     }
-    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    .padding(.horizontal, PrismaSpacing.lg)
+    .padding(.top, PrismaSpacing.sm)
+    .padding(.bottom, PrismaSpacing.lg + CascadeLayout.tabBarClearance)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .background(PrismaColors.background)
     .clipped()
     .sheet(isPresented: $showShare) {
       ShareSheet(items: shareItems)
@@ -217,27 +235,37 @@ private struct CascadeArticlePageView: View {
     .sheet(item: $aiSheet) { sheet in
       CascadeAISheetView(sheet: sheet, viewModel: readerViewModel)
     }
-    .onAppear {
-      readerViewModel.onAppear()
+  }
+
+  private var pageContent: some View {
+    VStack(alignment: .leading, spacing: PrismaSpacing.md) {
+      cascadeHeader
+      cascadeBody
+      if showsReadFullAction {
+        readFullButton
+      }
+      cascadeFooter
+      Spacer(minLength: 0)
     }
-    .task(id: article.id) {
-      try? await Task.sleep(nanoseconds: 450_000_000)
-      guard !Task.isCancelled, readerViewModel.canUseAI else { return }
-      await readerViewModel.prefetchSummaryIfNeeded()
-      await readerViewModel.prefetchContextIfNeeded()
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .overlay {
+      if let burst = activeLikeBurst {
+        CascadeLikeBurst(location: burst.location)
+          .id(burst.id)
+      }
     }
-    .onDisappear {
-      readerViewModel.onDisappear()
-    }
+    .simultaneousGesture(
+      SpatialTapGesture(count: 2, coordinateSpace: .local)
+        .onEnded { value in
+          triggerDoubleTapLike(at: value.location)
+        }
+    )
+    .contentShape(Rectangle())
   }
 
   @ViewBuilder
-  private func cascadeHeader(_ viewModel: ArticleReaderViewModel) -> some View {
+  private var cascadeHeader: some View {
     VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
-      if viewModel.isLiveCoverage {
-        LiveCoverageDot()
-      }
-
       if let recommendationReason, !recommendationReason.isEmpty {
         Text(recommendationReason)
           .font(PrismaTypography.caption2(.semibold))
@@ -245,12 +273,17 @@ private struct CascadeArticlePageView: View {
           .lineLimit(2)
       }
 
-      Text(viewModel.displayTitle)
-        .font(PrismaTypography.readerTitle())
-        .foregroundStyle(PrismaColors.textPrimary)
+      Button(action: onOpenArticle) {
+        Text(readerViewModel.displayTitle)
+          .font(PrismaTypography.readerTitle())
+          .foregroundStyle(PrismaColors.textPrimary)
+          .multilineTextAlignment(.leading)
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .buttonStyle(.plain)
 
       HStack(spacing: PrismaSpacing.xs) {
-        if let source = viewModel.resolvedSource {
+        if let source = readerViewModel.resolvedSource {
           SourceIconView(
             siteURL: source.siteURL,
             feedURL: source.feedURL,
@@ -278,36 +311,46 @@ private struct CascadeArticlePageView: View {
   }
 
   @ViewBuilder
-  private func cascadeBody(_ viewModel: ArticleReaderViewModel) -> some View {
-    if viewModel.needsTranslation {
-      cascadeTranslationBanner(viewModel)
+  private var cascadeBody: some View {
+    if readerViewModel.needsTranslation, readerViewModel.hasTranslation {
+      cascadeTranslationBanner
     }
 
-    if let plain = viewModel.plainBodyText, viewModel.hasReadableInAppContent {
+    if let plain = readerViewModel.plainBodyText,
+       plain.trimmingCharacters(in: .whitespacesAndNewlines).count >= 80,
+       readerViewModel.hasReadableInAppContent {
       Text(plain)
         .font(PrismaTypography.readerBody(
-          sizeMultiplier: viewModel.readerFontSizeMultiplier,
-          family: viewModel.readerFontFamily
+          sizeMultiplier: readerViewModel.readerFontSizeMultiplier,
+          family: readerViewModel.readerFontFamily
         ))
         .foregroundStyle(PrismaColors.textPrimary)
+        .lineLimit(showsReadFullAction ? 14 : 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-    } else if let html = viewModel.bodyHTML, viewModel.hasReadableInAppContent {
-      ArticleHTMLView(
-        html: html,
-        baseURL: URL(string: article.url),
-        fontFamily: viewModel.readerFontFamily,
-        fontSizeMultiplier: viewModel.readerFontSizeMultiplier,
-        suppressInlineImages: !viewModel.mediaItems.isEmpty,
-        onOpenExternalURL: { url in openURL(url) }
-      )
+    } else if let plain = readerViewModel.plainBodyText, readerViewModel.hasReadableInAppContent {
+      Text(plain)
+        .font(PrismaTypography.readerBody(
+          sizeMultiplier: readerViewModel.readerFontSizeMultiplier,
+          family: readerViewModel.readerFontFamily
+        ))
+        .foregroundStyle(PrismaColors.textPrimary)
+        .lineLimit(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     } else if let summary = article.displaySummary {
       Text(summary)
         .font(PrismaTypography.body())
         .foregroundStyle(PrismaColors.textSecondary)
+    } else {
+      Text(String(localized: "reader.noContent"))
+        .font(PrismaTypography.body())
+        .foregroundStyle(PrismaColors.textTertiary)
     }
 
-    if !viewModel.mediaItems.isEmpty {
-      ArticleMediaCarousel(mediaItems: viewModel.mediaItems) { index in
+    if !readerViewModel.mediaItems.isEmpty {
+      ArticleMediaCarousel(
+        mediaItems: readerViewModel.mediaItems,
+        presentation: .cascade
+      ) { index in
         galleryIndex = index
         showMediaGallery = true
       }
@@ -315,8 +358,19 @@ private struct CascadeArticlePageView: View {
     }
   }
 
+  private var readFullButton: some View {
+    Button(action: onOpenArticle) {
+      Text(String(localized: "cascade.readFull"))
+        .font(PrismaTypography.callout(.semibold))
+        .foregroundStyle(PrismaColors.accentFallback)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, PrismaSpacing.sm)
+    }
+    .buttonStyle(.plain)
+  }
+
   @ViewBuilder
-  private func cascadeFooter(_ viewModel: ArticleReaderViewModel) -> some View {
+  private var cascadeFooter: some View {
     if isLast {
       Text(String(localized: "cascade.end"))
         .font(PrismaTypography.caption())
@@ -334,18 +388,17 @@ private struct CascadeArticlePageView: View {
     return items
   }
 
-  private func performLikeToggle(_ readerViewModel: ArticleReaderViewModel) {
+  private func performLikeToggle() {
     let wasFavorite = readerViewModel.isFavorite
     readerViewModel.toggleFavorite()
-    if readerViewModel.isFavorite, !wasFavorite {
-      HapticFeedback.medium()
-      onLike()
-    }
+    guard readerViewModel.isFavorite, !wasFavorite else { return }
+    HapticFeedback.medium()
+    onLike()
   }
 
-  private func triggerDoubleTapLike(at location: CGPoint, readerViewModel: ArticleReaderViewModel) {
-    activeLikeBurst = (UUID(), location)
+  private func triggerDoubleTapLike(at location: CGPoint) {
     guard !readerViewModel.isFavorite else { return }
+    activeLikeBurst = (UUID(), location)
     HapticFeedback.medium()
     readerViewModel.likeFromCascade()
     onLike()
@@ -355,52 +408,25 @@ private struct CascadeArticlePageView: View {
     ArticleSpeechReader.shared.toggleSpeech(for: ArticleSpeechContent(article: article))
   }
 
-  private func openAISheet(_ sheet: CascadeAISheet, readerViewModel: ArticleReaderViewModel) {
+  private func openAISheet(_ sheet: CascadeAISheet) {
     aiSheet = sheet
-    Task {
-      switch sheet {
-      case .summary:
-        await readerViewModel.prefetchSummaryIfNeeded()
-      case .context:
-        await readerViewModel.prefetchContextIfNeeded()
-      }
-    }
   }
 
   @ViewBuilder
-  private func cascadeTranslationBanner(_ viewModel: ArticleReaderViewModel) -> some View {
+  private var cascadeTranslationBanner: some View {
     HStack(spacing: PrismaSpacing.sm) {
-      if viewModel.isTranslating {
-        ProgressView()
-          .controlSize(.small)
-        Text(String(localized: "reader.translating"))
-          .font(PrismaTypography.caption())
-          .foregroundStyle(PrismaColors.textSecondary)
-      } else if viewModel.hasTranslation {
-        Image(systemName: "character.book.closed")
-          .foregroundStyle(PrismaColors.accentFallback)
-        Text(String(localized: "reader.translatedTo \(viewModel.targetLanguageName)"))
-          .font(PrismaTypography.caption())
-          .foregroundStyle(PrismaColors.textSecondary)
-        Spacer()
-        Button(viewModel.isShowingTranslation
-          ? String(localized: "reader.viewOriginal")
-          : String(localized: "reader.viewTranslation")) {
-          viewModel.toggleTranslationView()
-        }
-        .font(PrismaTypography.caption(.semibold))
-      } else {
-        Image(systemName: "character.book.closed")
-          .foregroundStyle(PrismaColors.textTertiary)
-        Text(String(localized: "reader.translationPending"))
-          .font(PrismaTypography.caption())
-          .foregroundStyle(PrismaColors.textTertiary)
-        Spacer()
-        Button(String(localized: "reader.viewTranslation")) {
-          Task { await viewModel.prepareTranslation() }
-        }
-        .font(PrismaTypography.caption(.semibold))
+      Image(systemName: "character.book.closed")
+        .foregroundStyle(PrismaColors.accentFallback)
+      Text(String(localized: "reader.translatedTo \(readerViewModel.targetLanguageName)"))
+        .font(PrismaTypography.caption())
+        .foregroundStyle(PrismaColors.textSecondary)
+      Spacer()
+      Button(readerViewModel.isShowingTranslation
+        ? String(localized: "reader.viewOriginal")
+        : String(localized: "reader.viewTranslation")) {
+        readerViewModel.toggleTranslationView()
       }
+      .font(PrismaTypography.caption(.semibold))
     }
     .padding(PrismaSpacing.sm)
     .prismaGlass(cornerRadius: PrismaRadius.md)
@@ -438,24 +464,31 @@ private struct CascadeActionRail: View {
   let isSaved: Bool
   let isFavorite: Bool
   let isSpeaking: Bool
-  var canUseAI = false
   let onLike: () -> Void
   let onSave: () -> Void
   let onShare: () -> Void
   let onSpeak: () -> Void
   var onSummary: (() -> Void)?
+  var onComparison: (() -> Void)?
   var onContext: (() -> Void)?
 
   var body: some View {
     VStack(spacing: PrismaSpacing.md) {
-      if canUseAI, let onSummary {
+      if let onSummary {
         CascadeRailButton(
           systemName: "sparkles",
           label: String(localized: "reader.showSummary"),
           action: onSummary
         )
       }
-      if canUseAI, let onContext {
+      if let onComparison {
+        CascadeRailButton(
+          systemName: "arrow.left.arrow.right",
+          label: String(localized: "reader.showComparison"),
+          action: onComparison
+        )
+      }
+      if let onContext {
         CascadeRailButton(
           systemName: "info.circle",
           label: String(localized: "reader.showContext"),
@@ -488,36 +521,35 @@ private struct CascadeActionRail: View {
     }
     .padding(.vertical, PrismaSpacing.sm)
     .padding(.horizontal, PrismaSpacing.xxs)
-    .background(.ultraThinMaterial)
-    .clipShape(RoundedRectangle(cornerRadius: PrismaRadius.lg, style: .continuous))
+    .modifier(CascadeRailGlassBackground())
+  }
+}
+
+private struct CascadeRailGlassBackground: ViewModifier {
+  func body(content: Content) -> some View {
+    if #available(iOS 26.0, *) {
+      content
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: PrismaRadius.lg))
+    } else {
+      content
+        .prismaGlass(cornerRadius: PrismaRadius.lg)
+    }
   }
 }
 
 private struct CascadeRailButton: View {
   let systemName: String
   let label: String
-  var badge: Int? = nil
   var isActive = false
   let action: () -> Void
 
   var body: some View {
     Button(action: action) {
       VStack(spacing: 4) {
-        ZStack(alignment: .topTrailing) {
-          Image(systemName: systemName)
-            .font(.system(size: 22, weight: .semibold))
-            .foregroundStyle(isActive ? PrismaColors.accentFallback : PrismaColors.textPrimary)
-            .frame(width: 28, height: 28)
-          if let badge, badge > 0 {
-            Text("\(min(badge, 99))")
-              .font(.system(size: 9, weight: .bold))
-              .padding(3)
-              .background(Color.red)
-              .foregroundStyle(.white)
-              .clipShape(Circle())
-              .offset(x: 6, y: -6)
-          }
-        }
+        Image(systemName: systemName)
+          .font(.system(size: 22, weight: .semibold))
+          .foregroundStyle(isActive ? PrismaColors.accentFallback : PrismaColors.textPrimary)
+          .frame(width: 28, height: 28)
         Text(label)
           .font(.system(size: 10, weight: .medium))
           .foregroundStyle(PrismaColors.textSecondary)
@@ -533,6 +565,7 @@ private struct CascadeRailButton: View {
 
 private enum CascadeAISheet: String, Identifiable {
   case summary
+  case comparison
   case context
 
   var id: String { rawValue }
@@ -547,26 +580,17 @@ private struct CascadeAISheetView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: PrismaSpacing.md) {
-          if isLoading {
-            HStack(spacing: PrismaSpacing.sm) {
-              ProgressView()
-              Text(loadingText)
-                .font(PrismaTypography.callout())
-                .foregroundStyle(PrismaColors.textSecondary)
+          switch sheet {
+          case .summary, .context:
+            if let text = contentText, !text.isEmpty {
+              Text(text)
+                .font(PrismaTypography.body())
+                .foregroundStyle(PrismaColors.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(PrismaSpacing.lg)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(PrismaSpacing.lg)
-          } else if let text = contentText, !text.isEmpty {
-            Text(text)
-              .font(PrismaTypography.body())
-              .foregroundStyle(PrismaColors.textPrimary)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(PrismaSpacing.lg)
-          } else {
-            Text(String(localized: "ai.unavailable.body"))
-              .font(PrismaTypography.callout())
-              .foregroundStyle(PrismaColors.textSecondary)
-              .padding(PrismaSpacing.lg)
+          case .comparison:
+            comparisonContent
           }
 
           Text(String(localized: "reader.aiDisclaimer"))
@@ -588,30 +612,43 @@ private struct CascadeAISheetView: View {
     .presentationDetents([.medium, .large])
   }
 
+  @ViewBuilder
+  private var comparisonContent: some View {
+    if let unified = viewModel.unifiedStory, !unified.isEmpty {
+      cascadeAISection(
+        title: String(localized: "reader.unifiedStory"),
+        text: unified
+      )
+    }
+    if let comparison = viewModel.comparisonText, !comparison.isEmpty {
+      cascadeAISection(
+        title: String(localized: "reader.compare"),
+        text: comparison
+      )
+    }
+  }
+
+  private func cascadeAISection(title: String, text: String) -> some View {
+    VStack(alignment: .leading, spacing: PrismaSpacing.sm) {
+      Text(title)
+        .font(PrismaTypography.headline())
+        .foregroundStyle(PrismaColors.textPrimary)
+      Text(text)
+        .font(PrismaTypography.body())
+        .foregroundStyle(PrismaColors.textPrimary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .padding(PrismaSpacing.lg)
+  }
+
   private var title: String {
     switch sheet {
     case .summary:
       String(localized: "reader.aiSummary")
+    case .comparison:
+      String(localized: "reader.showComparison")
     case .context:
       String(localized: "reader.context")
-    }
-  }
-
-  private var loadingText: String {
-    switch sheet {
-    case .summary:
-      String(localized: "reader.summaryPreparing")
-    case .context:
-      String(localized: "reader.contextPreparing")
-    }
-  }
-
-  private var isLoading: Bool {
-    switch sheet {
-    case .summary:
-      viewModel.shouldShowSummaryPreparing
-    case .context:
-      viewModel.isGeneratingContext && !viewModel.hasContextAvailable
     }
   }
 
@@ -619,6 +656,8 @@ private struct CascadeAISheetView: View {
     switch sheet {
     case .summary:
       viewModel.aiSummary
+    case .comparison:
+      nil
     case .context:
       viewModel.contextExplanation
     }
