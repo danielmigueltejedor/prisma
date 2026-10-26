@@ -9,7 +9,7 @@ permissions:
 jobs:
   quality:
     name: quality
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
